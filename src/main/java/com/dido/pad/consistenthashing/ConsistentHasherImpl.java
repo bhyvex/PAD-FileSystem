@@ -404,4 +404,21 @@ public class ConsistentHasherImpl<B, M> implements ConsistentHasher<B, M>
 		Optional<T> result = Optional.ofNullable(key);
 		return result;
 	}
+
+	//TODO dido has added the method to support the search of the bucket for a member.
+
+	public B getBucketFromMember( M member) throws Exception {
+
+		Preconditions.checkNotNull(member, "Member name can not be null");
+		ByteBuffer bb = convertAndApplyHash(member);
+		ByteBuffer nearestBucket = bucketsMap.ceilingKey(bb);
+		if(nearestBucket != null){
+			return bucketsMap.get(nearestBucket);
+		}
+		else
+			throw new Exception("server not found");
+		//membersMap.put(, memberName);
+
+	}
+
 }

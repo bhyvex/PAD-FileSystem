@@ -29,6 +29,7 @@ public class HashingService {
     //TODO send a message ( DEST, TYPE MSG, TYPE OP)
     public void send(){
 
+
     }
 
     public ConsistentHasher<Node, String> getHasher(){

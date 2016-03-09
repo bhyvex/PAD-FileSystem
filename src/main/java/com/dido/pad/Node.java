@@ -32,6 +32,22 @@ public class Node {
         this._hashingService = new HashingService();
     }
 
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
     public Node(GossipMember member){
         this(member.getAddress(), member.getId());
     }
@@ -72,6 +88,25 @@ public class Node {
                 break;
 
         };
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Node node = (Node) o;
+
+        if (!ipAddress.equals(node.ipAddress)) return false;
+        return id.equals(node.id);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = ipAddress.hashCode();
+        result = 31 * result + id.hashCode();
+        return result;
     }
 
     @Override
