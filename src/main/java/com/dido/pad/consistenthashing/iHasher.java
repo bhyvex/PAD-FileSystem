@@ -61,11 +61,11 @@ public interface iHasher<S,D> {
     }
 
 /*
-    public static BytesConverter<AbstractData> getDataToBytesConverter(){
+    public static BytesConverter<AppPayload> getDataToBytesConverter(){
 
-        return new BytesConverter<AbstractData>() {
+        return new BytesConverter<AppPayload>() {
             @Override
-            public byte[] convert(AbstractData d) {
+            public byte[] convert(AppPayload d) {
                 return d.getKey().getBytes();
             }
         };

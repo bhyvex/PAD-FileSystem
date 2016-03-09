@@ -1,6 +1,5 @@
 package com.dido.pad.consistenthashing;
 
-import com.dido.pad.AbstractData;
 import com.google.common.base.Preconditions;
 import org.apache.log4j.Logger;
 
@@ -12,7 +11,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 /**
  * Created by dido-ubuntu on 08/03/16.
  */
-public class Hasher< T, D extends AbstractData> implements iHasher<T,D>{
+public class Hasher< T, D extends HashableData> implements iHasher<T,D>{
 
     public static final Logger LOGGER = Logger.getLogger(Hasher.class);
 
@@ -76,7 +75,7 @@ public class Hasher< T, D extends AbstractData> implements iHasher<T,D>{
         ByteBuffer nearServer = serversMap.ceilingKey(bbData);
         if(nearServer==null) {
            T server = serversMap.firstEntry().getValue();
-            return server;
+           return server;
         }
         else {
             T server = serversMap.get(nearServer);

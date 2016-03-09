@@ -1,14 +1,16 @@
-package com.dido.pad;
+package com.dido.pad.datamessages;
+
+import com.dido.pad.consistenthashing.HashableData;
 
 /**
  * Created by dido-ubuntu on 08/03/16.
  */
-public abstract class AbstractData<V> {
+public class AppPayload<V> extends HashableData{
 
     private String key;
     private V value;
 
-    public AbstractData(String key, V value) {
+    public AppPayload(String key, V value) {
         this.key = key;
         this.value = value;
     }
@@ -29,7 +31,9 @@ public abstract class AbstractData<V> {
         this.value = value;
     }
 
-    public abstract byte[] convertToBytes();
 
-
+    @Override
+    public byte[] convertToBytes() {
+        return getKey().getBytes();
+    }
 }

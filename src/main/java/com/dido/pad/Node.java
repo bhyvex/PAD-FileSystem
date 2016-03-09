@@ -1,6 +1,7 @@
 package com.dido.pad;
 
 
+import com.dido.pad.consistenthashing.HashableData;
 import com.dido.pad.consistenthashing.Hasher;
 import com.google.code.gossip.*;
 import com.google.code.gossip.event.GossipListener;
@@ -8,6 +9,7 @@ import com.google.code.gossip.event.GossipState;
 import org.apache.log4j.Logger;
 
 import java.net.UnknownHostException;
+import java.util.List;
 
 /**
  * Created by dido-ubuntu on 05/03/16.
@@ -17,7 +19,7 @@ public class Node  {
     public static final Logger LOGGER = Logger.getLogger(Node.class);
 
     private GossipService _gossipService;
-    private DataService _dataService;
+    private StorageService _dataService;
 
     private String ipAddress;
     private String id;
@@ -26,7 +28,11 @@ public class Node  {
     public Node(String ipAdresss, String id){
         this.ipAddress = ipAdresss;
         this.id = id;
-        this._dataService = new DataService();
+        this._dataService = new StorageService(this);
+    }
+
+    public StorageService get_dataService() {
+        return _dataService;
     }
 
     public Node(GossipMember member){
@@ -50,7 +56,8 @@ public class Node  {
     }
 
 
-    public void addGossipService(int port, int logLevel, java.util.List<GossipMember> gossipMembers, GossipSettings settings, GossipListener listener) throws UnknownHostException, InterruptedException {
+    public void addGossipService(int port, int logLevel, List<GossipMember> gossipMembers, GossipSettings settings, GossipListener listener)
+            throws UnknownHostException, InterruptedException {
         _gossipService = new GossipService(this.ipAddress,port,this.id,LogLevel.DEBUG,gossipMembers,settings,listener);
     }
 
@@ -64,25 +71,23 @@ public class Node  {
 
 
 
-    public Hasher<Node, AbstractData> getConsistenHasher(){
-        return _dataService.getHasher();
-    }
-
-
-
     /* callback of gossiping procedure if a node goes UP or DOWN  */
     public void  gossipEvent(GossipMember member, GossipState state) {
         switch (state) {
             case UP:
-                this._dataService.getHasher().addServer(new Node(member));
-                Node.LOGGER.info("Node "+member.getAddress()+" ADDED in "+this.toString());
+                getHasher().addServer(new Node(member));
+                Node.LOGGER.info("Node "+this.toString()+" ADDS  "+member.getAddress());
                 break;
             case DOWN:
-                this._dataService.getHasher().removeServer(new Node(member));
-                Node.LOGGER.info("Node "+member.getAddress()+"  REMOVED from "+this.toString());
+                getHasher().removeServer(new Node(member));
+                Node.LOGGER.info("Node "+this.toString()+"  REMOVES "+member.getAddress());
                 break;
 
         };
+    }
+
+    public Hasher<Node,HashableData> getHasher(){
+        return _dataService.getcHasher();
     }
 
     @Override
