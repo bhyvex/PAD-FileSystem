@@ -1,40 +1,34 @@
 package com.dido.pad.consistenthashing;
 
+import com.dido.pad.AbstractData;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Multiset;
-import com.sun.org.apache.xerces.internal.util.SynchronizedSymbolTable;
-import com.sun.org.apache.xml.internal.serializer.utils.SystemIDResolver;
+import org.apache.log4j.Logger;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Created by dido-ubuntu on 08/03/16.
  */
-public class Hasher<S,D> implements iHasher<S,D>{
+public class Hasher< T, D extends AbstractData> implements iHasher<T,D>{
+
+    public static final Logger LOGGER = Logger.getLogger(Hasher.class);
 
     private final int startVirtualNodeId, stopVirtualNodeId;
     private final HashFunction hashFunction;
-    private final BytesConverter<S> serverToBytesConverter;
-    private final BytesConverter<D> dataToBytesConverter;
+    private final BytesConverter<T> nodeToByteConverter;
 
-    private final NavigableMap<ByteBuffer, S> serversMap;
+    private final NavigableMap<ByteBuffer, T> serversMap;
 
-    public Hasher(final int virtulaNodes,
-                  final HashFunction hash,
-                  final BytesConverter<S> serverToBytesConverter,
-                  final BytesConverter<D> dataToBytesConverter) {
 
-        Preconditions.checkNotNull(serverToBytesConverter, "Server data converter can not be null.");
-        Preconditions.checkNotNull(dataToBytesConverter, "data converter can not be null.");
-        Preconditions.checkNotNull(hash,			   "HashFunction can not be null.");
+    public Hasher(final int virtulaNodes,final HashFunction hash, final BytesConverter<T> nodetoByteConverter) {
+
+        Preconditions.checkNotNull(hash,"HashFunction can not be null.");
 
         this.hashFunction = hash;
-        this.serverToBytesConverter = serverToBytesConverter;
-        this.dataToBytesConverter = dataToBytesConverter;
+        this.nodeToByteConverter = nodetoByteConverter;
 
         this.startVirtualNodeId = 1;
         this.stopVirtualNodeId = (virtulaNodes > 0) ? virtulaNodes : 1;
@@ -43,7 +37,7 @@ public class Hasher<S,D> implements iHasher<S,D>{
 
     }
     @Override
-    public void addServer(S server) {
+    public void addServer(T server) {
         Preconditions.checkNotNull(server, "Server name can not be null");
         List<ByteBuffer> virtBuckets = new ArrayList<>();
         for (int virtualNodeId = startVirtualNodeId; virtualNodeId <= stopVirtualNodeId; virtualNodeId++) {
@@ -51,12 +45,13 @@ public class Hasher<S,D> implements iHasher<S,D>{
             serversMap.put(virtBucket, server);
             virtBuckets.add(virtBucket);
         }
+
     }
 
 
-    private ByteBuffer convertAndApplyHash(int nodeID, S server){
+    private ByteBuffer convertAndApplyHash(int nodeID, T server){
 
-        byte[] bucketNameInBytes =  hashFunction.hash(this.serverToBytesConverter.convert(server));
+        byte[] bucketNameInBytes =  hashFunction.hash(nodeToByteConverter.convert(server));
         byte[] bucketNameAndCode = new byte[(Integer.BYTES / Byte.BYTES) + bucketNameInBytes.length];
         ByteBuffer bb = ByteBuffer.wrap(bucketNameAndCode);
         bb.put(bucketNameInBytes);
@@ -65,37 +60,32 @@ public class Hasher<S,D> implements iHasher<S,D>{
     }
 
     @Override
-    public void removeServer(S server) {
+    public void removeServer(T server) {
         Preconditions.checkNotNull(server, "Server name can not be null");
         for(int virtID= startVirtualNodeId; virtID < startVirtualNodeId+ stopVirtualNodeId; virtID++){
             ByteBuffer bbServerVirtuals = convertAndApplyHash(virtID,server);
             serversMap.remove(bbServerVirtuals);
         }
+
     }
 
-    private ByteBuffer convertAndApplyHash(D data){
-        byte[] bHashData = hashFunction.hash(dataToBytesConverter.convert(data));
+
+    public T getServerForData(D data){
+        byte[] bHashData = hashFunction.hash(data.convertToBytes());
         ByteBuffer bbData = ByteBuffer.wrap(bHashData);
-        return  bbData;
-    }
-
-    @Override
-    public S getServerForData(D data) throws Exception {
-        ByteBuffer bbData = convertAndApplyHash(data);
-
         ByteBuffer nearServer = serversMap.ceilingKey(bbData);
-
         if(nearServer==null) {
-            S server = serversMap.firstEntry().getValue();
+           T server = serversMap.firstEntry().getValue();
             return server;
         }
         else {
-            S server = serversMap.get(nearServer);
+            T server = serversMap.get(nearServer);
             return server;
         }
+
     }
 
-    public List<S> getAllNodes(){
+    public List<T> getAllNodes(){
         return new ArrayList<>(serversMap.values());
     }
 
@@ -104,7 +94,7 @@ public class Hasher<S,D> implements iHasher<S,D>{
 
         while(iter.hasNext()){
             ByteBuffer bb = iter.next();
-            S server = serversMap.get(bb);
+            T server = serversMap.get(bb);
             System.out.println("Hash: "+ byteBufferToLong(bb) +" Value: "+ server);
         }
 
@@ -116,7 +106,7 @@ public class Hasher<S,D> implements iHasher<S,D>{
     }
 
 
-    public NavigableMap<ByteBuffer, S> getServersMap() {
+    public NavigableMap<ByteBuffer, T> getServersMap() {
         return serversMap;
     }
 

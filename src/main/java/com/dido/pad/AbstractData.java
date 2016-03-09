@@ -3,11 +3,12 @@ package com.dido.pad;
 /**
  * Created by dido-ubuntu on 08/03/16.
  */
-public class MsgData<V> {
+public abstract class AbstractData<V> {
+
     private String key;
     private V value;
 
-    public MsgData(String key, V value) {
+    public AbstractData(String key, V value) {
         this.key = key;
         this.value = value;
     }
@@ -27,4 +28,8 @@ public class MsgData<V> {
     public void setValue(V value) {
         this.value = value;
     }
+
+    public abstract byte[] convertToBytes();
+
+
 }

@@ -1,16 +1,13 @@
 package com.dido.pad.consistenthashing;
 
-import com.dido.pad.MsgData;
 import com.dido.pad.Node;
 import com.google.common.base.Preconditions;
 import com.google.common.hash.Hashing;
 
-import java.nio.ByteBuffer;
-
 /**
  * Created by dido-ubuntu on 08/03/16.
  */
-public interface iHasher<S, D> {
+public interface iHasher<S,D> {
 
 
     public interface BytesConverter<T>{
@@ -27,7 +24,7 @@ public interface iHasher<S, D> {
 
     public void removeServer(S s);
 
-    public S getServerForData(D d) throws Exception;
+    //public S getServerForData(D d) throws Exception;
 
 
     /**
@@ -63,15 +60,16 @@ public interface iHasher<S, D> {
         };
     }
 
+/*
+    public static BytesConverter<AbstractData> getDataToBytesConverter(){
 
-    public static BytesConverter<MsgData> getDataToBytesConverter(){
-
-        return new BytesConverter<MsgData>() {
+        return new BytesConverter<AbstractData>() {
             @Override
-            public byte[] convert(MsgData d) {
+            public byte[] convert(AbstractData d) {
                 return d.getKey().getBytes();
             }
         };
     }
 
+}*/
 }

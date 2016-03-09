@@ -1,10 +1,9 @@
-package com.dido.pad;
-
-import com.dido.pad.consistenthashing.ConsistentHasher;
-import com.google.code.gossip.*;
-import com.google.code.gossip.event.GossipListener;
-import com.google.code.gossip.event.GossipState;
-import com.google.code.gossip.examples.*;
+import com.dido.pad.Node;
+import com.google.code.gossip.GossipMember;
+import com.google.code.gossip.GossipSettings;
+import com.google.code.gossip.LogLevel;
+import com.google.code.gossip.RemoteGossipMember;
+import org.junit.Test;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -14,30 +13,16 @@ import java.util.List;
 import static java.lang.Thread.sleep;
 
 /**
- * Created by dido-ubuntu on 04/03/16.
+ * Created by dido-ubuntu on 09/03/16.
  */
-public class NodeGossipExample {
+public class testGossip {
 
-    /** The number of clients to start. */
-    private static final int NUMBER_OF_CLIENTS = 4;
+    @Test
+    public void testGossipUP(){
 
-    public static void main(String[] args)
-    {
-        new Thread(NodeGossipExample::run).start();
-        /*new Thread(() -> {).start();*/
-    }
-
-    /**
-     * Constructor. This will start the this thread.
-     */
-
-    /**
-     * @see Thread#run()
-     */
-
-    public static void run()
-    {
         try {
+
+            int NUMBER_OF_CLIENTS = 4;
             GossipSettings settings = new GossipSettings();
             List<Node> clients = new ArrayList<Node>();
 
@@ -47,7 +32,7 @@ public class NodeGossipExample {
             // Create the gossip members and put them in a list and give them a port number starting with 2000.
             List<GossipMember> startupMembers = new ArrayList<GossipMember>();
             for (int i = 0; i < NUMBER_OF_CLIENTS; ++i) {
-                    startupMembers.add(new RemoteGossipMember(myIpAddress, 2000 + i, ""));
+                startupMembers.add(new RemoteGossipMember(myIpAddress, 2000 + i, ""));
             }
 
             // Lets start the gossip clients.
@@ -56,10 +41,10 @@ public class NodeGossipExample {
             int i=0;
             for (GossipMember member : startupMembers) {
                 Node n = new Node(myIpAddress, "node "+Integer.toString(i));
-                i++;
                 n.addGossipService(member.getPort(), LogLevel.DEBUG, startupMembers, settings, n::gossipEvent);
-                clients.add(n);
                 n.startGossipService();
+                clients.add(n);
+                i++;
                 sleep(settings.getCleanupInterval() + 1000);
             }
 
@@ -74,17 +59,5 @@ public class NodeGossipExample {
             e.printStackTrace();
         }
     }
-/*
-    public void gossipEvent(GossipMember member, GossipState state) {
-        switch (state) {
-            case UP:
-                n.getConsistenHasher().addBucket(new Node(member));
-                System.out.println(" ______________________UP  ------------");
-            case DOWN:
-                System.out.println(" ______________________DOWN ------------");
-
-        };
-    }*/
-
 
 }
