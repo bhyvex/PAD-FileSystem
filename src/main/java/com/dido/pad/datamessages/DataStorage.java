@@ -1,16 +1,17 @@
 package com.dido.pad.datamessages;
 
-import com.dido.pad.consistenthashing.HashableData;
+import com.dido.pad.consistenthashing.HashableDataStorage;
 
 /**
  * Created by dido-ubuntu on 08/03/16.
  */
-public class AppPayload<V> extends HashableData{
+public class DataStorage<V> implements HashableDataStorage {
+    //it is hashed by the Hasher so must be implements HashableDataStorage
 
     private String key;
     private V value;
 
-    public AppPayload(String key, V value) {
+    public DataStorage(String key, V value) {
         this.key = key;
         this.value = value;
     }
@@ -31,9 +32,8 @@ public class AppPayload<V> extends HashableData{
         this.value = value;
     }
 
-
     @Override
     public byte[] convertToBytes() {
-        return getKey().getBytes();
+        return this.key.getBytes();
     }
 }

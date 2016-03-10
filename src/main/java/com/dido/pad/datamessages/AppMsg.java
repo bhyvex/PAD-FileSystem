@@ -1,21 +1,40 @@
 package com.dido.pad.datamessages;
 
+import com.dido.pad.Node;
+import org.codehaus.jackson.annotate.JsonSubTypes;
+import org.codehaus.jackson.annotate.JsonTypeInfo;
+
+
 /**
  * Created by dido-ubuntu on 09/03/16.
  */
-public class AppMsg<V> {
 
-    public enum TYPE {REQUEST, REPLY, CONTROL};
-    public enum OPERATION {PUT,GET,LIST};
+
+@JsonTypeInfo(
+        use=JsonTypeInfo.Id.CLASS,
+        include=JsonTypeInfo.As.PROPERTY,
+        property = "type"
+)
+
+
+@JsonSubTypes(@JsonSubTypes.Type(value=RequestAppMsg.class))
+
+public class AppMsg {
+
+    public enum TYPE {REQUEST, REPLY};
+    public enum OPERATION {PUT,GET,LIST, OK, ERR};
 
     private TYPE type;
     private OPERATION operation;
-    private AppPayload<V> payload;
+    private Node originalSender;
 
-    public AppMsg(TYPE type, OPERATION op, AppPayload payload) {
-        this.operation = op;
+    public AppMsg() {
+    }
+
+    public AppMsg(TYPE type, OPERATION operation, Node originalSender) {
         this.type = type;
-        this.payload = payload;
+        this.operation = operation;
+        this.originalSender = originalSender;
     }
 
     public TYPE getType() {
@@ -34,14 +53,12 @@ public class AppMsg<V> {
         this.operation = operation;
     }
 
-    public  AppPayload getPayload(){
-        return this.payload;
+    public Node getOriginalSender() {
+        return originalSender;
     }
-    @Override
-    public String toString() {
-        return "AppMsg{" +
-                ", type=" + type +
-                ", operation=" + operation +
-                '}';
+
+    public void setOriginalSender(Node originalSender) {
+        this.originalSender = originalSender;
     }
+
 }

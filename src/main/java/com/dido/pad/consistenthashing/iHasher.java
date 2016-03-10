@@ -7,7 +7,7 @@ import com.google.common.hash.Hashing;
 /**
  * Created by dido-ubuntu on 08/03/16.
  */
-public interface iHasher<S,D> {
+public interface iHasher<S> {
 
 
     public interface BytesConverter<T>{
@@ -61,11 +61,11 @@ public interface iHasher<S,D> {
     }
 
 /*
-    public static BytesConverter<AppPayload> getDataToBytesConverter(){
+    public static BytesConverter<DataStorage> getDataToBytesConverter(){
 
-        return new BytesConverter<AppPayload>() {
+        return new BytesConverter<DataStorage>() {
             @Override
-            public byte[] convert(AppPayload d) {
+            public byte[] convert(DataStorage d) {
                 return d.getKey().getBytes();
             }
         };

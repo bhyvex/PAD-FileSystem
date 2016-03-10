@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 /**
  * Created by dido-ubuntu on 08/03/16.
  */
-public class Hasher< T, D extends HashableData> implements iHasher<T,D>{
+public class Hasher<T> implements iHasher<T>{
 
     public static final Logger LOGGER = Logger.getLogger(Hasher.class);
 
@@ -69,7 +69,7 @@ public class Hasher< T, D extends HashableData> implements iHasher<T,D>{
     }
 
 
-    public T getServerForData(D data){
+    public T getServerForData(HashableDataStorage data){
         byte[] bHashData = hashFunction.hash(data.convertToBytes());
         ByteBuffer bbData = ByteBuffer.wrap(bHashData);
         ByteBuffer nearServer = serversMap.ceilingKey(bbData);
@@ -81,7 +81,6 @@ public class Hasher< T, D extends HashableData> implements iHasher<T,D>{
             T server = serversMap.get(nearServer);
             return server;
         }
-
     }
 
     public List<T> getAllNodes(){

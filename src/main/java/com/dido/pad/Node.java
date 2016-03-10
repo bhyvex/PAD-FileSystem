@@ -1,14 +1,18 @@
 package com.dido.pad;
 
 
-import com.dido.pad.consistenthashing.HashableData;
+import com.dido.pad.consistenthashing.HashableDataStorage;
 import com.dido.pad.consistenthashing.Hasher;
+import com.dido.pad.datamessages.AppMsg;
 import com.google.code.gossip.*;
 import com.google.code.gossip.event.GossipListener;
 import com.google.code.gossip.event.GossipState;
 import org.apache.log4j.Logger;
+import org.codehaus.jackson.map.ObjectMapper;
 
-import java.net.UnknownHostException;
+import java.io.IOException;
+import java.net.*;
+import java.nio.ByteBuffer;
 import java.util.List;
 
 /**
@@ -19,20 +23,19 @@ public class Node  {
     public static final Logger LOGGER = Logger.getLogger(Node.class);
 
     private GossipService _gossipService;
-    private StorageService _dataService;
+    private StorageService _storageService;
 
     private String ipAddress;
     private String id;
 
 
-    public Node(String ipAdresss, String id){
-        this.ipAddress = ipAdresss;
+    public Node(String ipAddresss, String id){
+        this.ipAddress = ipAddresss;
         this.id = id;
-        this._dataService = new StorageService(this);
     }
 
-    public StorageService get_dataService() {
-        return _dataService;
+    public StorageService get_storageService() {
+        return _storageService;
     }
 
     public Node(GossipMember member){
@@ -55,6 +58,10 @@ public class Node  {
         this.id = id;
     }
 
+    public void addStorageService(int port){
+        this._storageService = new StorageService(this, port);
+    }
+
 
     public void addGossipService(int port, int logLevel, List<GossipMember> gossipMembers, GossipSettings settings, GossipListener listener)
             throws UnknownHostException, InterruptedException {
@@ -64,6 +71,8 @@ public class Node  {
     public void startGossipService(){
         _gossipService.start();
     }
+
+    public void startStorageService(){this._storageService.start();}
 
     public void shutdown(){
         _gossipService.shutdown();
@@ -86,8 +95,8 @@ public class Node  {
         };
     }
 
-    public Hasher<Node,HashableData> getHasher(){
-        return _dataService.getcHasher();
+    public Hasher<Node> getHasher(){
+        return _storageService.getcHasher();
     }
 
     @Override
@@ -115,6 +124,46 @@ public class Node  {
                 "id='" + id + '\'' +
                 ", ipAddress='" + ipAddress + '\'' +
                 '}';
+    }
+
+    public void send(String ip, int port, AppMsg msg){
+        try {
+            InetAddress address = null;
+            address = InetAddress.getByName(ip);
+
+            ObjectMapper mapper = new ObjectMapper();
+            byte[] jsonByte = mapper.writeValueAsBytes(msg);
+
+            int packet_length = jsonByte.length;
+
+            // Convert the packet length to the byte representation of the int.
+            byte[] length_bytes = new byte[4];
+            length_bytes[0] = (byte) (packet_length >> 24);
+            length_bytes[1] = (byte) ((packet_length << 8) >> 24);
+            length_bytes[2] = (byte) ((packet_length << 16) >> 24);
+            length_bytes[3] = (byte) ((packet_length << 24) >> 24);
+
+            ByteBuffer byteBuffer = ByteBuffer.allocate(4 + jsonByte.length);
+            byteBuffer.put(length_bytes);
+            byteBuffer.put(jsonByte);
+            byte[] buf = byteBuffer.array();
+
+
+            // / Initialize a datagram packet with data and address
+            DatagramSocket dsocket = new DatagramSocket();
+            DatagramPacket packet = new DatagramPacket(buf, buf.length, address, port);
+            dsocket.send(packet);
+            dsocket.close();
+
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        } catch (SocketException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
     }
 
 
