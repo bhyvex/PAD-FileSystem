@@ -76,7 +76,7 @@ public class StorageService extends Thread{
             try {
                 byte [] buff = new byte[udpServer.getReceiveBufferSize()];
                 DatagramPacket p = new DatagramPacket(buff, buff.length);
-                StorageService.LOGGER.debug( this.myNode.getIpAddress()+" - Storage Service waiting messages...");
+                StorageService.LOGGER.info( this.myNode.getIpAddress()+" - Storage Service waiting messages...");
                 udpServer.receive(p);
                 String ipSender = p.getAddress().getHostAddress();
 
@@ -99,7 +99,7 @@ public class StorageService extends Thread{
                     Node destNode = this.cHasher.getServerForData(requestMsg.getKey());
                     if (destNode.equals(this.myNode)) { /*store in my database*/
                         mangageRequest(requestMsg);
-                    } else { /*send to other node*/
+                    } else {                            /*send to other node*/
                         destNode.sendToStorageNode(requestMsg);
                     }
                 }
@@ -123,10 +123,10 @@ public class StorageService extends Thread{
     private void manageReply(ReplyAppMsg msg){
         switch (msg.getOperation()) {
             case OK:
-                StorageService.LOGGER.debug( this.myNode.getIpAddress()+" - REPLY  OK "+msg.getMsg());
+                StorageService.LOGGER.info( this.myNode.getIpAddress()+" - REPLY  OK "+msg.getMsg());
                 break;
             case ERR:
-                StorageService.LOGGER.debug( this.myNode.getIpAddress()+" - REPLY  ERR "+msg.getMsg());
+                StorageService.LOGGER.info( this.myNode.getIpAddress()+" - REPLY  ERR "+msg.getMsg());
                 break;
         }
     }
@@ -134,11 +134,14 @@ public class StorageService extends Thread{
     private void mangageRequest(RequestAppMsg<?> msg){
         switch (msg.getOperation()) {
             case PUT:
-                StorageService.LOGGER.debug( this.myNode.getIpAddress()+" - RECEIVED MSG "+msg.getOperation() +" <" + msg.getKey()+":"+msg.getValue()+">");
+                StorageService.LOGGER.info( this.myNode.getIpAddress()+" - RECEIVED MSG "+msg.getOperation() +" <" + msg.getKey()+":"+msg.getValue()+"> from "+msg.getIpSender());
                 this.storage.put(new DataStorage(msg.getKey(), msg.getValue()));
                 StorageService.LOGGER.info( this.myNode.getIpAddress()+" - Inserted <" + msg.getKey()+":"+msg.getValue()+"> into local database");
-                String info = "PUT <" +msg.getKey()+":"+msg.getValue()+">";
-                myNode.send(msg.getIpSender(), Helper.STORAGE_PORT,new ReplyAppMsg(AppMsg.OPERATION.OK,info));
+
+               // if(!msg.getIpSender().equals(myNode.getIpAddress())){
+                    String info = "PUT <" + msg.getKey() + ":" + msg.getValue() + ">";
+                    myNode.send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OPERATION.OK, info));
+                //}
                 break;
             case GET:
                 String key = msg.getKey();

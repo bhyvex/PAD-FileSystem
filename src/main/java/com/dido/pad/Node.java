@@ -31,6 +31,7 @@ public class Node  {
     private String id;
 
     private int portStorage;
+    private int portGossip;
 
     // Empty constructor for jackson parser to JSON
     public Node(){
@@ -39,24 +40,26 @@ public class Node  {
 
     // Node from a GossipMember. Used when a GossipMemeber goes UP.
     public Node(GossipMember member){
-        this(member.getAddress(), member.getId(),Helper.STORAGE_PORT);
+        this(member.getHost(), member.getId(),Helper.STORAGE_PORT, member.getPort());
     }
 
-    public Node(String ipAddresss, String id, int portStorage){
+    public Node(String ipAddresss, String id, int portStorage, int portGossip){
         this.ipAddress = ipAddresss;
         this.id = id;
         this.portStorage = portStorage;
+        this.portGossip = portGossip;
     }
 
-    public void startGossipService(int port, int logLevel, List<GossipMember> gossipMembers, GossipSettings settings, GossipListener listener)
+    public void startGossipService(int logLevel, List<GossipMember> gossipMembers, GossipSettings settings, GossipListener listener)
             throws UnknownHostException, InterruptedException {
-        _gossipService = new GossipService(this.ipAddress,port,this.id,LogLevel.DEBUG,gossipMembers,settings,listener);
+        _gossipService = new GossipService(this.ipAddress,this.portGossip,this.id, logLevel,gossipMembers,settings,listener);
         _gossipService.start();
     }
 
     public  void startStorageService(){
         this._storageService = new StorageService(this);
         this._storageService.start();
+        this.getConsistentHasher().addServer(this);
     }
 
     public String getIpAddress() {
@@ -75,10 +78,9 @@ public class Node  {
         this.id = id;
     }
 
-    public Hasher<Node> getConsistentHasher() throws Exception{
-         if(_storageService != null)
+    public Hasher<Node> getConsistentHasher() {
             return _storageService.getcHasher();
-        else throw  new Exception("Storage Service nis not initialize");
+
     }
 
     public void shutdown(){
@@ -96,7 +98,7 @@ public class Node  {
                 } catch (Exception e) {
                     Node.LOGGER.error(e);
                 }
-                Node.LOGGER.info("UP "+member.getAddress()+": added into "+this.toString());
+                Node.LOGGER.info(this.getIpAddress() + "- UP node "+member.getAddress());
                 break;
             case DOWN:
                 try {
@@ -150,13 +152,14 @@ public class Node  {
 
     public void sendToStorageNode(AppMsg msg){
         /* send  message to the same storage  node */
-        this.send(ipAddress, this.getPortStorage(),msg);
+        //System.out.println("sendToStorage from same node "+this.ipAddress);
+        this.send(this.ipAddress, this.getPortStorage() ,msg);
     }
 
     public void send(String destIp, int destPort, AppMsg msg){
         try {
-            InetAddress address = null;
-            address = InetAddress.getByName(destIp);
+
+            InetAddress address = InetAddress.getByName(destIp);
 
             msg.setIpSender(this.ipAddress);
 
@@ -183,6 +186,7 @@ public class Node  {
             DatagramSocket dsocket = new DatagramSocket();
             DatagramPacket packet = new DatagramPacket(buf, buf.length, address, destPort);
             dsocket.send(packet);
+            LOGGER.info(this.ipAddress+" - sent msg to "+destIp);
             dsocket.close();
 
         } catch (UnknownHostException e) {

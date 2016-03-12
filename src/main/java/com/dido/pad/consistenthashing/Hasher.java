@@ -32,7 +32,7 @@ public class Hasher<T> implements iHasher<T>{
         this.startVirtualNodeId = 1;
         this.stopVirtualNodeId = (virtulaNodes > 0) ? virtulaNodes : 1;
 
-        this.serversMap = new ConcurrentSkipListMap<>();
+        this.serversMap = new ConcurrentSkipListMap<ByteBuffer, T>();
 
     }
     @Override

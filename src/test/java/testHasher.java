@@ -16,7 +16,7 @@ public class testHasher {
         Hasher<Node> hasher = new Hasher<>(1,iHasher.SHA1,iHasher.getNodeToBytesConverter());
 
 
-        Node n1 = new Node("127.0.0.1","id1", Helper.STORAGE_PORT);
+        Node n1 = new Node("127.0.0.1","id1", Helper.STORAGE_PORT, Helper.GOSSIP_PORT);
         hasher.addServer(n1);
 
         try {
@@ -36,10 +36,10 @@ public class testHasher {
     public void testMoreServer(){
         Hasher<Node> hasher = new Hasher<>(1,iHasher.SHA1, iHasher.getNodeToBytesConverter() );
 
-        Node n1 = new Node("127.0.0.1","id1", Helper.STORAGE_PORT);
-        Node n2 = new Node("127.0.0.2","id2",Helper.STORAGE_PORT);
-        Node n3 = new Node("127.0.0.3","id3",Helper.STORAGE_PORT);
-        Node n4 = new Node("127.0.0.4","id4",Helper.STORAGE_PORT);
+        Node n1 = new Node("127.0.0.1","id1", Helper.STORAGE_PORT,Helper.GOSSIP_PORT);
+        Node n2 = new Node("127.0.0.2","id2",Helper.STORAGE_PORT,Helper.GOSSIP_PORT);
+        Node n3 = new Node("127.0.0.3","id3",Helper.STORAGE_PORT,Helper.GOSSIP_PORT);
+        Node n4 = new Node("127.0.0.4","id4",Helper.STORAGE_PORT,Helper.GOSSIP_PORT);
 
         hasher.addServer(n1);
         hasher.addServer(n2);
@@ -55,9 +55,12 @@ public class testHasher {
             DataStorage d2 = new DataStorage("BBBB","second data");
             Node node = hasher.getServerForData(d2.getKey());
             Assert.assertEquals(node,n4);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+
 
     }
     /*
