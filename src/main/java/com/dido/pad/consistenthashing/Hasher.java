@@ -69,8 +69,8 @@ public class Hasher<T> implements iHasher<T>{
     }
 
 
-    public T getServerForData(HashableDataStorage data){
-        byte[] bHashData = hashFunction.hash(data.convertToBytes());
+    public T getServerForData(String key){
+        byte[] bHashData = hashFunction.hash(key.getBytes());
         ByteBuffer bbData = ByteBuffer.wrap(bHashData);
         ByteBuffer nearServer = serversMap.ceilingKey(bbData);
         if(nearServer==null) {

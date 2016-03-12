@@ -1,7 +1,6 @@
 package com.dido.pad;
 
-import com.dido.pad.datamessages.DataStorage;
-
+import javax.xml.crypto.Data;
 import java.util.HashMap;
 
 /**
@@ -18,6 +17,10 @@ public class PersisentStorage{
     public void put(DataStorage<?> data){
         database.put(data.getKey(), data);
     }
+
+    public boolean containsKey(String key){ return database.containsKey(key);}
+
+    public DataStorage<?> get(String key){ return database.get(key); }
 
     public void update(DataStorage<?> data){
         database.put(data.getKey(),data);

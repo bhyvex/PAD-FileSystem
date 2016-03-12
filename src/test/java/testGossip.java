@@ -1,4 +1,7 @@
+import com.dido.pad.Helper;
 import com.dido.pad.Node;
+import com.dido.pad.datamessages.AppMsg;
+import com.dido.pad.datamessages.RequestAppMsg;
 import com.google.code.gossip.GossipMember;
 import com.google.code.gossip.GossipSettings;
 import com.google.code.gossip.LogLevel;
@@ -22,7 +25,7 @@ public class testGossip {
 
         try {
 
-            int NUMBER_OF_CLIENTS = 4;
+            int NUMBER_OF_CLIENTS = 2;
             GossipSettings settings = new GossipSettings();
             List<Node> clients = new ArrayList<Node>();
 
@@ -32,21 +35,22 @@ public class testGossip {
             // Create the gossip members and put them in a list and give them a port number starting with 2000.
             List<GossipMember> startupMembers = new ArrayList<GossipMember>();
             for (int i = 0; i < NUMBER_OF_CLIENTS; ++i) {
-                startupMembers.add(new RemoteGossipMember(myIpAddress, 2000 + i, ""));
+                startupMembers.add(new RemoteGossipMember("127.0.0."+i, 2000 + i, ""));
             }
 
             // Lets start the gossip clients.
             // Start the clients, waiting cleaning-interval + 1 second between them which will show the
             // dead list handling.
-            int i=0;
+            int i=1;
             for (GossipMember member : startupMembers) {
-                Node n = new Node(myIpAddress, "node "+Integer.toString(i));
-                n.addGossipService(member.getPort(), LogLevel.DEBUG, startupMembers, settings, n::gossipEvent);
-                n.startGossipService();
+                Node n = new Node("127.0.0."+i, "node "+Integer.toString(i), Helper.STORAGE_PORT);
+                n.startGossipService(member.getPort(), LogLevel.DEBUG, startupMembers, settings, n::gossipEvent);
+                n.startStorageService();
                 clients.add(n);
                 i++;
                 sleep(settings.getCleanupInterval() + 1000);
             }
+            clients.get(0).send("127.0.0.1",Helper.STORAGE_PORT, new RequestAppMsg<String>(AppMsg.OPERATION.PUT,"key1"," ciao"));
 
             // After starting all gossip clients, first wait 10 seconds and then shut them down.
             sleep(10000);

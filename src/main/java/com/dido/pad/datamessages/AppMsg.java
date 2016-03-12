@@ -1,8 +1,8 @@
 package com.dido.pad.datamessages;
 
 import com.dido.pad.Node;
-import org.codehaus.jackson.annotate.JsonSubTypes;
-import org.codehaus.jackson.annotate.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 
 /**
@@ -16,26 +16,52 @@ import org.codehaus.jackson.annotate.JsonTypeInfo;
         property = "type"
 )
 
-
-@JsonSubTypes(@JsonSubTypes.Type(value=RequestAppMsg.class))
+@JsonSubTypes( {
+        @JsonSubTypes.Type(value=RequestAppMsg.class,name ="requestMsg"),
+        @JsonSubTypes.Type(value=ReplyAppMsg.class,name ="replyMsg")
+})
 
 public class AppMsg {
 
-    public enum TYPE {REQUEST, REPLY};
-    public enum OPERATION {PUT,GET,LIST, OK, ERR};
+    public enum TYPE {REQUEST, REPLY}
+    public enum OPERATION {PUT,GET, LIST, OK, ERR}
 
     private TYPE type;
     private OPERATION operation;
-    private Node originalSender;
+    private String ipSender;
+    private int portSender;
 
-    public AppMsg() {
-    }
-
-    public AppMsg(TYPE type, OPERATION operation, Node originalSender) {
+    public AppMsg(TYPE type, OPERATION operation, String ipSender, int portSender) {
         this.type = type;
         this.operation = operation;
-        this.originalSender = originalSender;
+        this.ipSender = ipSender;
+        this.portSender = portSender;
     }
+    public AppMsg(TYPE type, OPERATION operation){
+        this.type = type;
+        this.operation = operation;
+    }
+    public AppMsg() {
+
+    }
+
+
+    public String getIpSender() {
+        return ipSender;
+    }
+
+    public void setIpSender(String ipSender) {
+        this.ipSender = ipSender;
+    }
+
+    public int getPortSender() {
+        return portSender;
+    }
+
+    public void setPortSender(int portSender) {
+        this.portSender = portSender;
+    }
+
 
     public TYPE getType() {
         return type;
@@ -51,14 +77,6 @@ public class AppMsg {
 
     public void setOperation(OPERATION operation) {
         this.operation = operation;
-    }
-
-    public Node getOriginalSender() {
-        return originalSender;
-    }
-
-    public void setOriginalSender(Node originalSender) {
-        this.originalSender = originalSender;
     }
 
 }

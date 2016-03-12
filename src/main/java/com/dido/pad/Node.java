@@ -1,14 +1,15 @@
 package com.dido.pad;
 
 
-import com.dido.pad.consistenthashing.HashableDataStorage;
 import com.dido.pad.consistenthashing.Hasher;
 import com.dido.pad.datamessages.AppMsg;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.google.code.gossip.*;
 import com.google.code.gossip.event.GossipListener;
 import com.google.code.gossip.event.GossipState;
 import org.apache.log4j.Logger;
-import org.codehaus.jackson.map.ObjectMapper;
+
 
 import java.io.IOException;
 import java.net.*;
@@ -18,6 +19,7 @@ import java.util.List;
 /**
  * Created by dido-ubuntu on 05/03/16.
  */
+
 public class Node  {
 
     public static final Logger LOGGER = Logger.getLogger(Node.class);
@@ -28,18 +30,33 @@ public class Node  {
     private String ipAddress;
     private String id;
 
+    private int portStorage;
 
-    public Node(String ipAddresss, String id){
+    // Empty constructor for jackson parser to JSON
+    public Node(){
+    }
+
+
+    // Node from a GossipMember. Used when a GossipMemeber goes UP.
+    public Node(GossipMember member){
+        this(member.getAddress(), member.getId(),Helper.STORAGE_PORT);
+    }
+
+    public Node(String ipAddresss, String id, int portStorage){
         this.ipAddress = ipAddresss;
         this.id = id;
+        this.portStorage = portStorage;
     }
 
-    public StorageService get_storageService() {
-        return _storageService;
+    public void startGossipService(int port, int logLevel, List<GossipMember> gossipMembers, GossipSettings settings, GossipListener listener)
+            throws UnknownHostException, InterruptedException {
+        _gossipService = new GossipService(this.ipAddress,port,this.id,LogLevel.DEBUG,gossipMembers,settings,listener);
+        _gossipService.start();
     }
 
-    public Node(GossipMember member){
-        this(member.getAddress(), member.getId());
+    public  void startStorageService(){
+        this._storageService = new StorageService(this);
+        this._storageService.start();
     }
 
     public String getIpAddress() {
@@ -58,46 +75,41 @@ public class Node  {
         this.id = id;
     }
 
-    public void addStorageService(int port){
-        this._storageService = new StorageService(this, port);
+    public Hasher<Node> getConsistentHasher() throws Exception{
+         if(_storageService != null)
+            return _storageService.getcHasher();
+        else throw  new Exception("Storage Service nis not initialize");
     }
-
-
-    public void addGossipService(int port, int logLevel, List<GossipMember> gossipMembers, GossipSettings settings, GossipListener listener)
-            throws UnknownHostException, InterruptedException {
-        _gossipService = new GossipService(this.ipAddress,port,this.id,LogLevel.DEBUG,gossipMembers,settings,listener);
-    }
-
-    public void startGossipService(){
-        _gossipService.start();
-    }
-
-    public void startStorageService(){this._storageService.start();}
 
     public void shutdown(){
-        _gossipService.shutdown();
+        if(_gossipService != null)
+            _gossipService.shutdown();
     }
-
 
 
     /* callback of gossiping procedure if a node goes UP or DOWN  */
     public void  gossipEvent(GossipMember member, GossipState state) {
         switch (state) {
             case UP:
-                getHasher().addServer(new Node(member));
-                Node.LOGGER.info("Node "+this.toString()+" ADDS  "+member.getAddress());
+                try {
+                    getConsistentHasher().addServer(new Node(member));
+                } catch (Exception e) {
+                    Node.LOGGER.error(e);
+                }
+                Node.LOGGER.info("UP "+member.getAddress()+": added into "+this.toString());
                 break;
             case DOWN:
-                getHasher().removeServer(new Node(member));
-                Node.LOGGER.info("Node "+this.toString()+"  REMOVES "+member.getAddress());
+                try {
+                    getConsistentHasher().removeServer(new Node(member));
+                } catch (Exception e) {
+                    Node.LOGGER.error(e);
+                }
+                Node.LOGGER.info("DOWN "+member.getAddress()+": removed from " +this.toString());
                 break;
 
-        };
+        }
     }
 
-    public Hasher<Node> getHasher(){
-        return _storageService.getcHasher();
-    }
 
     @Override
     public boolean equals(Object o) {
@@ -126,12 +138,30 @@ public class Node  {
                 '}';
     }
 
-    public void send(String ip, int port, AppMsg msg){
+    public int getPortStorage(){
+        return this.portStorage;
+
+    }
+
+    public void setPortStorage( int portStorage){
+        this.portStorage = portStorage;
+
+    }
+
+    public void sendToStorageNode(AppMsg msg){
+        /* send  message to the same storage  node */
+        this.send(ipAddress, this.getPortStorage(),msg);
+    }
+
+    public void send(String destIp, int destPort, AppMsg msg){
         try {
             InetAddress address = null;
-            address = InetAddress.getByName(ip);
+            address = InetAddress.getByName(destIp);
 
-            ObjectMapper mapper = new ObjectMapper();
+            msg.setIpSender(this.ipAddress);
+
+
+            ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module());
             byte[] jsonByte = mapper.writeValueAsBytes(msg);
 
             int packet_length = jsonByte.length;
@@ -151,7 +181,7 @@ public class Node  {
 
             // / Initialize a datagram packet with data and address
             DatagramSocket dsocket = new DatagramSocket();
-            DatagramPacket packet = new DatagramPacket(buf, buf.length, address, port);
+            DatagramPacket packet = new DatagramPacket(buf, buf.length, address, destPort);
             dsocket.send(packet);
             dsocket.close();
 
