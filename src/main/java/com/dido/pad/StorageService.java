@@ -47,7 +47,7 @@ public class StorageService extends Thread{
             StorageService.LOGGER.debug("I'm " + node.toString());
             udpServer = new DatagramSocket(sAddress);
         } catch (SocketException e) {
-            StorageService.LOGGER.error(this.myNode.getIpAddress()+ e);
+            StorageService.LOGGER.error(this.myNode.getIpAddress()+ " - "+ e);
             keepRunning.set(false);
             udpServer = null;
         }
@@ -55,7 +55,11 @@ public class StorageService extends Thread{
 
     }
 
-   public void setPortStorage(int portStorage) {
+    public PersisentStorage getStorage() {
+        return storage;
+    }
+
+    public void setPortStorage(int portStorage) {
         this.myNode.setPortStorage(portStorage);
     }
 
@@ -129,6 +133,7 @@ public class StorageService extends Thread{
                 keepRunning.set(false);
             }
         }
+        shutdown();
 
     }
 
@@ -180,6 +185,10 @@ public class StorageService extends Thread{
     }
 
 
+    public void shutdown(){
+        LOGGER.info(this.myNode.getIpAddress()+"Storage service has been shutdown...");
+        this.udpServer.close();
+    }
 
 
 }

@@ -64,6 +64,7 @@ public class Hasher<T> implements iHasher<T>{
         for(int virtID= startVirtualNodeId; virtID < startVirtualNodeId+ stopVirtualNodeId; virtID++){
             ByteBuffer bbServerVirtuals = convertAndApplyHash(virtID,server);
             serversMap.remove(bbServerVirtuals);
+            System.out.print("------- REMOVED ----- "+server);
         }
 
     }
@@ -104,7 +105,7 @@ public class Hasher<T> implements iHasher<T>{
     }
 
 
-    public NavigableMap<ByteBuffer, T> getServersMap() {
+    synchronized public NavigableMap<ByteBuffer, T> getServersMap() {
         return serversMap;
     }
 

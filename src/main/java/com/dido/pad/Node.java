@@ -36,15 +36,8 @@ public class Node  {
 
     // Empty constructor for jackson parser to JSON
     public Node(){
+
     }
-
-
-    // Node from a GossipMember. Used when a GossipMemeber goes UP.
-    public Node(GossipMember member){
-
-        this(member.getHost(), member.getId(), Helper.STORAGE_PORT, member.getPort());
-    }
-
     public Node(String ipAddress, String id, int portStorage, int portGossip){
         this.ipAddress = ipAddress;
         this.id = id;
@@ -52,6 +45,12 @@ public class Node  {
         this.portGossip = portGossip;
 
     }
+    // Node from a GossipMember. Used when a GossipMemeber goes UP.
+    public Node(GossipMember member){
+        this(member.getHost(), member.getId(), Helper.STORAGE_PORT, member.getPort());
+    }
+
+
 
     public void start_Gossip_Storage_Service(int logLevel, List<GossipMember> gossipMembers, GossipSettings settings, GossipListener listener)
             throws UnknownHostException, InterruptedException {
@@ -59,28 +58,34 @@ public class Node  {
         _gossipService.start();
 
         /*start storage service*/
-        //this._startStorageService();
         this._storageService = new StorageService(this);
         this._storageService.addServer(this);
+        this._storageService.start();
 
-       /* for (GossipMember member : gossipMembers) {
+        for (GossipMember member : gossipMembers) {
             if(!member.getHost().equals(this.getIpAddress()))
                 this._storageService.addServer(new Node(member));
-        }*/
+        }
 
-        this._storageService.start();
+
     }
 
     public GossipManager getGossipmanager(){
         return _gossipService.get_gossipManager();
     }
 
-    private  void _startStorageService(){
+/*
+    // only for test the storage service
+    public  void _startStorageService(){
         this._storageService = new StorageService(this);
         this._storageService.start();
 
     }
-
+    //only for test the storage system
+    public StorageService getStorageService(){
+        return this._storageService;
+    }
+*/
     public String getIpAddress() {
         return ipAddress;
     }
@@ -100,6 +105,8 @@ public class Node  {
     public void shutdown(){
         if(_gossipService != null)
             _gossipService.shutdown();
+        if(_storageService != null)
+            _storageService.shutdown();
     }
 
 
@@ -111,8 +118,8 @@ public class Node  {
                 Node.LOGGER.info(this.getIpAddress() + "- UP event, node "+member.getHost()+" added to consistent hasher");
                 break;
             case DOWN:
+                System.out.println("REMOVED DOWN ");
                 _storageService.removeServer(new Node(member));
-
                 Node.LOGGER.info(this.getIpAddress()+"- DOWN event, node "+member.getHost()+" removed from consistent hasher");
                 break;
 
@@ -207,5 +214,7 @@ public class Node  {
 
     }
 
-
+    public StorageService get_storageService() {
+        return _storageService;
+    }
 }
