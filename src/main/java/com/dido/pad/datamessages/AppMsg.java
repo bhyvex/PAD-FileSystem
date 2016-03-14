@@ -40,6 +40,8 @@ public class AppMsg {
     public AppMsg(TYPE type, OPERATION operation){
         this.type = type;
         this.operation = operation;
+
+
     }
     public AppMsg() {
 

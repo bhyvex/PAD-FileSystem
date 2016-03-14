@@ -36,7 +36,7 @@ public class Hasher<T> implements iHasher<T>{
 
     }
     @Override
-    public void addServer(T server) {
+    synchronized public void addServer(T server) {
         Preconditions.checkNotNull(server, "Server name can not be null");
         List<ByteBuffer> virtBuckets = new ArrayList<>();
         for (int virtualNodeId = startVirtualNodeId; virtualNodeId <= stopVirtualNodeId; virtualNodeId++) {
@@ -59,7 +59,7 @@ public class Hasher<T> implements iHasher<T>{
     }
 
     @Override
-    public void removeServer(T server) {
+    synchronized public void removeServer(T server) {
         Preconditions.checkNotNull(server, "Server name can not be null");
         for(int virtID= startVirtualNodeId; virtID < startVirtualNodeId+ stopVirtualNodeId; virtID++){
             ByteBuffer bbServerVirtuals = convertAndApplyHash(virtID,server);
@@ -69,7 +69,7 @@ public class Hasher<T> implements iHasher<T>{
     }
 
 
-    public T getServerForData(String key){
+    synchronized public T getServerForData(String key){
         byte[] bHashData = hashFunction.hash(key.getBytes());
         ByteBuffer bbData = ByteBuffer.wrap(bHashData);
         ByteBuffer nearServer = serversMap.ceilingKey(bbData);

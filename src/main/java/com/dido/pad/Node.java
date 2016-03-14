@@ -8,6 +8,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.google.code.gossip.*;
 import com.google.code.gossip.event.GossipListener;
 import com.google.code.gossip.event.GossipState;
+import com.google.code.gossip.manager.GossipManager;
 import org.apache.log4j.Logger;
 
 
@@ -40,26 +41,44 @@ public class Node  {
 
     // Node from a GossipMember. Used when a GossipMemeber goes UP.
     public Node(GossipMember member){
-        this(member.getHost(), member.getId(),Helper.STORAGE_PORT, member.getPort());
+
+        this(member.getHost(), member.getId(), Helper.STORAGE_PORT, member.getPort());
     }
 
-    public Node(String ipAddresss, String id, int portStorage, int portGossip){
-        this.ipAddress = ipAddresss;
+    public Node(String ipAddress, String id, int portStorage, int portGossip){
+        this.ipAddress = ipAddress;
         this.id = id;
         this.portStorage = portStorage;
         this.portGossip = portGossip;
+
     }
 
-    public void startGossipService(int logLevel, List<GossipMember> gossipMembers, GossipSettings settings, GossipListener listener)
+    public void start_Gossip_Storage_Service(int logLevel, List<GossipMember> gossipMembers, GossipSettings settings, GossipListener listener)
             throws UnknownHostException, InterruptedException {
         _gossipService = new GossipService(this.ipAddress,this.portGossip,this.id, logLevel,gossipMembers,settings,listener);
         _gossipService.start();
+
+        /*start storage service*/
+        //this._startStorageService();
+        this._storageService = new StorageService(this);
+        this._storageService.addServer(this);
+
+       /* for (GossipMember member : gossipMembers) {
+            if(!member.getHost().equals(this.getIpAddress()))
+                this._storageService.addServer(new Node(member));
+        }*/
+
+        this._storageService.start();
     }
 
-    public  void startStorageService(){
+    public GossipManager getGossipmanager(){
+        return _gossipService.get_gossipManager();
+    }
+
+    private  void _startStorageService(){
         this._storageService = new StorageService(this);
         this._storageService.start();
-        this.getConsistentHasher().addServer(this);
+
     }
 
     public String getIpAddress() {
@@ -78,11 +97,6 @@ public class Node  {
         this.id = id;
     }
 
-    public Hasher<Node> getConsistentHasher() {
-            return _storageService.getcHasher();
-
-    }
-
     public void shutdown(){
         if(_gossipService != null)
             _gossipService.shutdown();
@@ -93,20 +107,13 @@ public class Node  {
     public void  gossipEvent(GossipMember member, GossipState state) {
         switch (state) {
             case UP:
-                try {
-                    getConsistentHasher().addServer(new Node(member));
-                } catch (Exception e) {
-                    Node.LOGGER.error(e);
-                }
-                Node.LOGGER.info(this.getIpAddress() + "- UP node "+member.getAddress());
+                _storageService.addServer(new Node(member));
+                Node.LOGGER.info(this.getIpAddress() + "- UP event, node "+member.getHost()+" added to consistent hasher");
                 break;
             case DOWN:
-                try {
-                    getConsistentHasher().removeServer(new Node(member));
-                } catch (Exception e) {
-                    Node.LOGGER.error(e);
-                }
-                Node.LOGGER.info("DOWN "+member.getAddress()+": removed from " +this.toString());
+                _storageService.removeServer(new Node(member));
+
+                Node.LOGGER.info(this.getIpAddress()+"- DOWN event, node "+member.getHost()+" removed from consistent hasher");
                 break;
 
         }
@@ -161,7 +168,9 @@ public class Node  {
 
             InetAddress address = InetAddress.getByName(destIp);
 
-            msg.setIpSender(this.ipAddress);
+
+            if(msg.getIpSender() == null)
+                msg.setIpSender(this.ipAddress);
 
 
             ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module());
@@ -181,12 +190,10 @@ public class Node  {
             byteBuffer.put(jsonByte);
             byte[] buf = byteBuffer.array();
 
-
             // / Initialize a datagram packet with data and address
             DatagramSocket dsocket = new DatagramSocket();
             DatagramPacket packet = new DatagramPacket(buf, buf.length, address, destPort);
             dsocket.send(packet);
-            LOGGER.info(this.ipAddress+" - sent msg to "+destIp);
             dsocket.close();
 
         } catch (UnknownHostException e) {

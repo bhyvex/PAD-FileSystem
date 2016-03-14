@@ -44,7 +44,7 @@ public class testGossip {
             int i=1;
             for (GossipMember member : startupMembers) {
                 Node n = new Node("127.0.0."+i, "node "+Integer.toString(i), Helper.STORAGE_PORT);
-                n.startGossipService(member.getPort(), LogLevel.DEBUG, startupMembers, settings, n::gossipEvent);
+                n.start_Gossip_Storage_Service(member.getPort(), LogLevel.DEBUG, startupMembers, settings, n::gossipEvent);
                 n.startStorageService();
                 clients.add(n);
                 i++;

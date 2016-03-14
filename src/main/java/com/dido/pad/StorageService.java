@@ -8,12 +8,15 @@ import com.dido.pad.datamessages.RequestAppMsg;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.deser.impl.ReadableObjectId;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import org.apache.log4j.Logger;
 
 
 import java.io.IOException;
 import java.net.*;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -40,11 +43,11 @@ public class StorageService extends Thread{
         keepRunning = new AtomicBoolean(true);
         try {
             SocketAddress sAddress= new InetSocketAddress(node.getIpAddress(), getPortStorage());
-            StorageService.LOGGER.info(this.myNode.getIpAddress()+ ": Storage Service succesfully initialized on portStorage "+ getPortStorage());
+            StorageService.LOGGER.info(this.myNode.getIpAddress()+ "- Storage Service succesfully initialized on portStorage "+ getPortStorage());
             StorageService.LOGGER.debug("I'm " + node.toString());
             udpServer = new DatagramSocket(sAddress);
         } catch (SocketException e) {
-            StorageService.LOGGER.error(e);
+            StorageService.LOGGER.error(this.myNode.getIpAddress()+ e);
             keepRunning.set(false);
             udpServer = null;
         }
@@ -70,6 +73,14 @@ public class StorageService extends Thread{
     }
 
 
+    public void addServer(Node n){
+        this.cHasher.addServer(n);
+    }
+
+    public void removeServer(Node n){
+        this.cHasher.removeServer(n);
+    }
+
     @Override
     public void run(){
         while(keepRunning.get()){
@@ -78,7 +89,6 @@ public class StorageService extends Thread{
                 DatagramPacket p = new DatagramPacket(buff, buff.length);
                 StorageService.LOGGER.info( this.myNode.getIpAddress()+" - Storage Service waiting messages...");
                 udpServer.receive(p);
-                String ipSender = p.getAddress().getHostAddress();
 
                 int packet_length = 0;
                 for (int i = 0; i < 4; i++) {
@@ -99,11 +109,13 @@ public class StorageService extends Thread{
                     Node destNode = this.cHasher.getServerForData(requestMsg.getKey());
                     if (destNode.equals(this.myNode)) { /*store in my database*/
                         mangageRequest(requestMsg);
-                    } else {                            /*send to other node*/
+                    } else {                            /*send mesage to another node*/
                         destNode.sendToStorageNode(requestMsg);
+                        StorageService.LOGGER.info( this.myNode.getIpAddress()+" - redicrect msg to "+destNode.getIpAddress());
+
                     }
                 }
-                else{/* reply message*/
+                else{       /* reply message*/
                  if(msg instanceof  ReplyAppMsg){
                      ReplyAppMsg replyMsg = (ReplyAppMsg) msg;
                      manageReply(replyMsg);
@@ -140,7 +152,7 @@ public class StorageService extends Thread{
 
                // if(!msg.getIpSender().equals(myNode.getIpAddress())){
                     String info = "PUT <" + msg.getKey() + ":" + msg.getValue() + ">";
-                    myNode.send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OPERATION.OK, info));
+                    myNode.send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OPERATION.OK, " PUT " +info));
                 //}
                 break;
             case GET:
@@ -148,13 +160,21 @@ public class StorageService extends Thread{
                 StorageService.LOGGER.debug( this.myNode.getIpAddress()+" - RECEIVED MSG "+msg.getOperation()+"<"+ key+">");
                 if(storage.containsKey(key)) {
                     DataStorage<?> data = storage.get(key);
-                    myNode.send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OPERATION.OK,data.toString()));
+                    myNode.send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OPERATION.OK, " GET "+ data.toString()));
                 }
                 else {
-                    myNode.send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OPERATION.ERR, "key not found"));
+                    myNode.send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OPERATION.ERR, " GET key not found"));
                 }
                 break;
             case LIST:
+                HashMap<String, DataStorage<?>> db = this.storage.getStorage();
+                if(!db.isEmpty()) {
+                    myNode.send(msg.getIpSender(),Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OPERATION.OK, " LIST "+ db.toString()));
+                }
+                else{
+                    myNode.send(msg.getIpSender(),Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OPERATION.ERR, " LIST empty data databse"));
+                }
+
                 break;
         }
     }
