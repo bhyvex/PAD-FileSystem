@@ -74,18 +74,19 @@ public class Node  {
         return _gossipService.get_gossipManager();
     }
 
-/*
+
     // only for test the storage service
     public  void _startStorageService(){
         this._storageService = new StorageService(this);
         this._storageService.start();
 
     }
+
     //only for test the storage system
     public StorageService getStorageService(){
         return this._storageService;
     }
-*/
+
     public String getIpAddress() {
         return ipAddress;
     }

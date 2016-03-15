@@ -1,6 +1,5 @@
 package com.dido.pad.datamessages;
 
-import com.dido.pad.Node;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
@@ -18,7 +17,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 @JsonSubTypes( {
         @JsonSubTypes.Type(value=RequestAppMsg.class,name ="requestMsg"),
-        @JsonSubTypes.Type(value=ReplyAppMsg.class,name ="replyMsg")
+        @JsonSubTypes.Type(value=ReplyAppMsg.class,name ="replyMsg"),
+        @JsonSubTypes.Type(value=RequestSystemMsg.class,name ="cotrolMsg")
 })
 
 public class AppMsg {
@@ -40,8 +40,6 @@ public class AppMsg {
     public AppMsg(TYPE type, OPERATION operation){
         this.type = type;
         this.operation = operation;
-
-
     }
     public AppMsg() {
 

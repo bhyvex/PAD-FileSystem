@@ -5,6 +5,7 @@ import com.dido.pad.consistenthashing.iHasher;
 import com.dido.pad.datamessages.AppMsg;
 import com.dido.pad.datamessages.ReplyAppMsg;
 import com.dido.pad.datamessages.RequestAppMsg;
+import com.dido.pad.datamessages.RequestSystemMsg;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -106,7 +107,7 @@ public class StorageService extends Thread{
 
                 ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module());
                 AppMsg msg = mapper.readValue(receivedMessage, AppMsg.class);
-
+                /* application message received /*/
                 if (msg instanceof RequestAppMsg<?>) {
                     RequestAppMsg requestMsg = (RequestAppMsg) msg;
                     String key = requestMsg.getKey();
@@ -119,13 +120,15 @@ public class StorageService extends Thread{
 
                     }
                 }
-                else{       /* reply message*/
-                 if(msg instanceof  ReplyAppMsg){
+                /*system control message reveved*/
+                else if(msg instanceof RequestSystemMsg) {
+                    manageSystemMsg((RequestSystemMsg)msg);
+                }
+                /* reply message*/
+                else if (msg instanceof  ReplyAppMsg){
                      ReplyAppMsg replyMsg = (ReplyAppMsg) msg;
                      manageReply(replyMsg);
-                 }
                 }
-
 
             } catch (IOException e) {
                 StorageService.LOGGER.error(e);
@@ -135,6 +138,20 @@ public class StorageService extends Thread{
         }
         shutdown();
 
+    }
+
+    private void manageSystemMsg(RequestSystemMsg msg) {
+
+        switch (msg.getOperation()) {
+            case PUT:
+                //TODO put a flag that is a duplicated version of the data
+
+                break;
+            case GET:
+                break;
+            case LIST:
+                break;
+        }
     }
 
     private void manageReply(ReplyAppMsg msg){
