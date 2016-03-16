@@ -1,8 +1,5 @@
 package com.dido.pad.datamessages;
 
-import com.dido.pad.DataStorage;
-import com.dido.pad.VectorClocks.VectorClock;
-import com.dido.pad.VectorClocks.Version;
 import com.dido.pad.VectorClocks.Versioned;
 
 /**
@@ -10,28 +7,30 @@ import com.dido.pad.VectorClocks.Versioned;
  */
 public class RequestSystemMsg extends AppMsg {
 
-    private Versioned<DataStorage<?>> data;
-    //private String key;
+    private Versioned data;
+    private String key;  //for GET message
+
+    public RequestSystemMsg() {
+    }
 
     //PUT the versioned storage data
-    public  RequestSystemMsg(OPERATION op, String ipSender, int portSender, Versioned<DataStorage<?>> data){
+    public  RequestSystemMsg(OPERATION op, String ipSender, int portSender, Versioned data){
         super(TYPE.REQUEST,op,ipSender,portSender);
         this.data = data;
     }
 
     //GET request System message
-    public RequestSystemMsg(OPERATION op, String ipSender, int portSender){
+    public RequestSystemMsg(OPERATION op, String ipSender, int portSender, String key){
         super(TYPE.REQUEST, op,ipSender,portSender);
         this.data = null;
+        this.key = key;
     }
 
-    public RequestSystemMsg() {
-    }
 
-    public Versioned<DataStorage<?>> getData() {
+    public Versioned getVersionedData() {
         return data;
     }
-/*
+
     public String getKey() {
         return key;
     }
@@ -39,8 +38,8 @@ public class RequestSystemMsg extends AppMsg {
     public void setKey(String key) {
         this.key = key;
     }
-*/
-    public void setData(Versioned<DataStorage<?>> data) {
+
+    public void setVersionedData(Versioned data) {
         this.data = data;
     }
 }

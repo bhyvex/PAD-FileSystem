@@ -1,12 +1,19 @@
 package com.dido.pad.consistenthashing;
 
+import com.dido.pad.Node;
 import com.google.common.base.Preconditions;
+import com.google.common.util.concurrent.ListenableFuture;
 import org.apache.log4j.Logger;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Created by dido-ubuntu on 08/03/16.
@@ -20,6 +27,7 @@ public class Hasher<T> implements iHasher<T>{
     private final BytesConverter<T> nodeToByteConverter;
 
     private final NavigableMap<ByteBuffer, T> serversMap;
+    private  HashMap<T, List<ByteBuffer>> virtualForServer;
 
 
     public Hasher(final int virtulaNodes,final HashFunction hash, final BytesConverter<T> nodetoByteConverter) {
@@ -33,8 +41,10 @@ public class Hasher<T> implements iHasher<T>{
         this.stopVirtualNodeId = (virtulaNodes > 0) ? virtulaNodes : 1;
 
         this.serversMap = new ConcurrentSkipListMap<ByteBuffer, T>();
+        this.virtualForServer = new HashMap<>();
 
     }
+
     @Override
     synchronized public void addServer(T server) {
         Preconditions.checkNotNull(server, "Server name can not be null");
@@ -44,6 +54,17 @@ public class Hasher<T> implements iHasher<T>{
             serversMap.put(virtBucket, server);
             virtBuckets.add(virtBucket);
         }
+        virtualForServer.put(server,virtBuckets);
+    }
+
+    @Override
+    synchronized public void removeServer(T server) {
+        Preconditions.checkNotNull(server, "Server name can not be null");
+        for(int virtID= startVirtualNodeId; virtID <= stopVirtualNodeId; virtID++){
+            ByteBuffer bbServerVirtuals = convertAndApplyHash(virtID,server);
+            serversMap.remove(bbServerVirtuals);
+        }
+        virtualForServer.remove(server);
 
     }
 
@@ -58,16 +79,6 @@ public class Hasher<T> implements iHasher<T>{
         return ByteBuffer.wrap(hashFunction.hash(bucketNameAndCode));
     }
 
-    @Override
-    synchronized public void removeServer(T server) {
-        Preconditions.checkNotNull(server, "Server name can not be null");
-        for(int virtID= startVirtualNodeId; virtID < startVirtualNodeId+ stopVirtualNodeId; virtID++){
-            ByteBuffer bbServerVirtuals = convertAndApplyHash(virtID,server);
-            serversMap.remove(bbServerVirtuals);
-            System.out.print("------- REMOVED ----- "+server);
-        }
-
-    }
 
 
     synchronized public T getServerForData(String key){
@@ -89,13 +100,14 @@ public class Hasher<T> implements iHasher<T>{
     }
 
     public void printkeyValueHash(){
-        Iterator<ByteBuffer> iter =  serversMap.navigableKeySet().descendingIterator();
-
+        SortedMap<ByteBuffer, T> sorted = serversMap.tailMap(serversMap.firstKey());
+        Iterator<ByteBuffer> iter =   sorted.keySet().iterator();
         while(iter.hasNext()){
             ByteBuffer bb = iter.next();
             T server = serversMap.get(bb);
-            System.out.println("Hash: "+ byteBufferToLong(bb) +" Value: "+ server);
+            System.out.println("Hash: "+ byteBufferToLong(bb)+" Value: "+ server); // byteBufferToLong(bb)
         }
+        System.out.println(" ");
 
     }
 
@@ -107,6 +119,26 @@ public class Hasher<T> implements iHasher<T>{
 
     synchronized public NavigableMap<ByteBuffer, T> getServersMap() {
         return serversMap;
+    }
+
+    public ArrayList<T> getNextServers(T server,int number){
+        Preconditions.checkArgument(number < virtualForServer.size(), "Too many next servers inserted");
+
+        List<ByteBuffer> virtuals = virtualForServer.get(server);
+        ByteBuffer bbNext = virtuals.get(0);  //first entry is the Bytebuffer of the physical server
+        ArrayList<T> nexts = new ArrayList<>();
+
+        while(number > 0) {
+            bbNext = serversMap.higherKey(bbNext);
+            if (bbNext == null) { // there is no they greater than the server key.
+                bbNext = serversMap.firstKey();
+            }
+            if(!virtuals.contains(bbNext) && !nexts.contains(serversMap.get(bbNext))){
+                nexts.add(serversMap.get(bbNext));
+                number--;
+            }
+        }
+        return nexts;
     }
 
 

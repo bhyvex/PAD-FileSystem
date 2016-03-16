@@ -3,13 +3,15 @@ package com.dido.pad;
 /**
  * Created by dido-ubuntu on 11/03/16.
  */
-public class DataStorage<T>  {
+public class StorageData<T>  {
 
     private String key;
     private T value;
 
+    public StorageData() {
+    }
 
-    public DataStorage(String key, T value) {
+    public StorageData(String key, T value) {
         this.key = key;
         this.value = value;
     }
@@ -32,7 +34,7 @@ public class DataStorage<T>  {
 
     @Override
     public String toString() {
-        return "DataStorage {" +
+        return "StorageData {" +
                 "key='" + key + '\'' +
                 ", value=" + value +
                 '}';
@@ -43,7 +45,7 @@ public class DataStorage<T>  {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        DataStorage<?> that = (DataStorage<?>) o;
+        StorageData<?> that = (StorageData<?>) o;
 
         if (key != null ? !key.equals(that.key) : that.key != null) return false;
         return value != null ? value.equals(that.value) : that.value == null;

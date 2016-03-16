@@ -51,6 +51,10 @@ public class VectorClock  implements Version {
         return new VectorClock(Maps.newHashMap(vectorClock));
     }
 
+    public void update (VectorClock v2){
+
+    }
+
 
     @Override
     public APPEN compare(Version v) throws Exception {

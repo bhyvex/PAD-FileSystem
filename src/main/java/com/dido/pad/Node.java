@@ -33,18 +33,33 @@ public class Node  {
 
     private int portStorage;
     private int portGossip;
+    private int numReplicas;
 
     // Empty constructor for jackson parser to JSON
     public Node(){
-
     }
+
+    public int getNumReplicas() {
+        return numReplicas;
+    }
+
+    public void setNumReplicas(int numReplicas) {
+        this.numReplicas = numReplicas;
+    }
+
     public Node(String ipAddress, String id, int portStorage, int portGossip){
         this.ipAddress = ipAddress;
         this.id = id;
         this.portStorage = portStorage;
         this.portGossip = portGossip;
-
+        this.numReplicas = 1;
     }
+
+    public Node(String ipAddress, String id, int portStorage, int portGossip, int numReplicas){
+        this(ipAddress,id,portStorage,portGossip);
+        this.numReplicas = numReplicas;
+    }
+
     // Node from a GossipMember. Used when a GossipMemeber goes UP.
     public Node(GossipMember member){
         this(member.getHost(), member.getId(), Helper.STORAGE_PORT, member.getPort());
@@ -62,12 +77,11 @@ public class Node  {
         this._storageService.addServer(this);
         this._storageService.start();
 
+        // ADD seed nodes to the node storage service
         for (GossipMember member : gossipMembers) {
             if(!member.getHost().equals(this.getIpAddress()))
                 this._storageService.addServer(new Node(member));
         }
-
-
     }
 
     public GossipManager getGossipmanager(){

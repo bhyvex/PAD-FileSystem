@@ -63,7 +63,9 @@ public class testGossipStorageService {
             clients.get(0).send("127.0.0.3", Helper.STORAGE_PORT, req);
 
             Thread.sleep(3000);
+            //check if 127.0.0.3 has received the key
             Assert.assertTrue(clients.get(2).get_storageService().getStorage().containsKey(key));
+
 
             AppMsg req1 = new RequestAppMsg<String>(AppMsg.OPERATION.GET, key, "");
             clients.get(0).send("127.0.0.3",Helper.STORAGE_PORT, req1);

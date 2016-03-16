@@ -1,34 +1,49 @@
 package com.dido.pad.VectorClocks;
 
 
-import com.dido.pad.DataStorage;
+import com.dido.pad.StorageData;
 
 /**
- * A wrapper for an DataStorage object that adds a Version.
+ * A wrapper for an StorageData object that adds a Version.
  */
 
-//extends DataStorage<?>
-public class Versioned<T > {
+//extends StorageData<?>
+public class Versioned<T extends StorageData> {
 
     private T data;
-    private final VectorClock version;
+    private  VectorClock vectorclock;
+    private String masterNode;  //master node of the data.
+
+    public Versioned() {
+        //for jackson JSOn parser
+    }
 
     public Versioned(T data) {
         this.data = data;
-        this.version = new VectorClock();
+        this.vectorclock = new VectorClock();
     }
 
     public Versioned(T data, Version version) {
-        this.version = version == null ? new VectorClock() : (VectorClock) version;
+        this.vectorclock = version == null ? new VectorClock() : (VectorClock) version;
         this.data = data;
+    }
+
+    public String getMasterNode() { return masterNode;  }
+
+    public void setMasterNode(String masterNode) {
+        this.masterNode = masterNode;
+    }
+
+    public void setgetVectorclock(VectorClock version) {
+        this.vectorclock = version;
+    }
+
+    public VectorClock getVectorclock() {
+        return vectorclock;
     }
 
     public T getData(){
         return data;
-    }
-
-    public VectorClock getVersion() {
-        return version;
     }
 
     public void setData(T data) {
@@ -36,11 +51,11 @@ public class Versioned<T > {
     }
 
     /**
-     * Create a clone of this Versioned object such that the object pointed to
-     * is the same, but the VectorClock and Versioned wrapper is a shallow copy.
+     * Create a clone of this StorageData object such that the object pointed to
+     * is the same, but the VectorClock and StorageData wrapper is a shallow copy.
      */
     public Versioned<T> cloneVersioned() {
-        return new Versioned<T>(this.getData(), this.version.clone());
+        return new Versioned<T>(this.getData(), this.vectorclock.clone());
     }
 }
 
