@@ -52,12 +52,30 @@ public class Node  {
         this.id = id;
         this.portStorage = portStorage;
         this.portGossip = portGossip;
-        this.numReplicas = 1;
     }
-
+/*
     public Node(String ipAddress, String id, int portStorage, int portGossip, int numReplicas){
         this(ipAddress,id,portStorage,portGossip);
         this.numReplicas = numReplicas;
+    }*/
+
+
+    public Node(String ipAddress, String id, int portStorage, int portGossip, String level, List<GossipMember> gossipMembers, GossipSettings settings) {
+        this(ipAddress,id,portStorage,portGossip);
+        try {
+            //TODO String level can be eliminated and taken directly from config file
+            _gossipService = new GossipService(ipAddress,portGossip,id, LogLevel.fromString(level),gossipMembers, settings,this::gossipEvent);
+
+        } catch (InterruptedException | UnknownHostException e) {
+            e.printStackTrace();
+        }
+        _storageService = new StorageService(this, gossipMembers);
+        this._storageService.addServer(this);
+    }
+
+    public void start(){
+        _gossipService.start();
+        _storageService.start();
     }
 
     // Node from a GossipMember. Used when a GossipMemeber goes UP.
@@ -66,13 +84,14 @@ public class Node  {
     }
 
 
-
-    public void start_Gossip_Storage_Service(int logLevel, List<GossipMember> gossipMembers, GossipSettings settings, GossipListener listener)
+    private void startGossipService(int logLevel, List<GossipMember> gossipMembers, GossipSettings settings, GossipListener listener)
             throws UnknownHostException, InterruptedException {
-        _gossipService = new GossipService(this.ipAddress,this.portGossip,this.id, logLevel,gossipMembers,settings,listener);
+        //_gossipService = new GossipService(this.ipAddress,this.portGossip,this.id, logLevel,gossipMembers,settings,listener);
         _gossipService.start();
 
-        /*start storage service*/
+        //_storageService = new StorageService(this, gossipMembers);
+        /*
+        // start storage servic
         this._storageService = new StorageService(this);
         this._storageService.addServer(this);
         this._storageService.start();
@@ -81,7 +100,7 @@ public class Node  {
         for (GossipMember member : gossipMembers) {
             if(!member.getHost().equals(this.getIpAddress()))
                 this._storageService.addServer(new Node(member));
-        }
+        }*/
     }
 
     public GossipManager getGossipmanager(){
@@ -90,9 +109,17 @@ public class Node  {
 
 
     // only for test the storage service
-    public  void _startStorageService(){
-        this._storageService = new StorageService(this);
+    private  void startStorageService(){
+        //this._storageService = new StorageService(this);
         this._storageService.start();
+
+        // ADD seed nodes to the node storage service ( int the Storage Service)
+        //_gossipService.get_gossipManager().getMemberList();
+      //  System.out.println("GOSSIP"+_gossipService.get_gossipManager().getMemberList().size());
+        //for (GossipMember member : _gossipService.get_gossipManager().getMemberList()) {
+          //  if(!member.getHost().equals(this.getIpAddress()))
+            //    this._storageService.addServer(new Node(member));
+        //}
 
     }
 
@@ -137,7 +164,6 @@ public class Node  {
                 _storageService.removeServer(new Node(member));
                 Node.LOGGER.info(this.getIpAddress()+"- DOWN event, node "+member.getHost()+" removed from consistent hasher");
                 break;
-
         }
     }
 
@@ -182,7 +208,7 @@ public class Node  {
     public void sendToStorageNode(AppMsg msg){
         /* send  message to the same storage  node */
         //System.out.println("sendToStorage from same node "+this.ipAddress);
-        this.send(this.ipAddress, this.getPortStorage() ,msg);
+        this.send(this.ipAddress, this.getPortStorage(),msg);
     }
 
     public void send(String destIp, int destPort, AppMsg msg){
@@ -190,10 +216,8 @@ public class Node  {
 
             InetAddress address = InetAddress.getByName(destIp);
 
-
             if(msg.getIpSender() == null)
                 msg.setIpSender(this.ipAddress);
-
 
             ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module());
             byte[] jsonByte = mapper.writeValueAsBytes(msg);

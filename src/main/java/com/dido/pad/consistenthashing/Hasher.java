@@ -27,7 +27,7 @@ public class Hasher<T> implements iHasher<T>{
     private final BytesConverter<T> nodeToByteConverter;
 
     private final NavigableMap<ByteBuffer, T> serversMap;
-    private  HashMap<T, List<ByteBuffer>> virtualForServer;
+    private  HashMap<T, ArrayList<ByteBuffer>> virtualForServer; // <Node :list< vitualNodes>> :for each Node list its virtual nodes
 
 
     public Hasher(final int virtulaNodes,final HashFunction hash, final BytesConverter<T> nodetoByteConverter) {
@@ -48,7 +48,7 @@ public class Hasher<T> implements iHasher<T>{
     @Override
     synchronized public void addServer(T server) {
         Preconditions.checkNotNull(server, "Server name can not be null");
-        List<ByteBuffer> virtBuckets = new ArrayList<>();
+        ArrayList<ByteBuffer> virtBuckets = new ArrayList<>();
         for (int virtualNodeId = startVirtualNodeId; virtualNodeId <= stopVirtualNodeId; virtualNodeId++) {
             ByteBuffer virtBucket = convertAndApplyHash(virtualNodeId, server);
             serversMap.put(virtBucket, server);
@@ -96,7 +96,13 @@ public class Hasher<T> implements iHasher<T>{
     }
 
     public List<T> getAllNodes(){
-        return new ArrayList<>(serversMap.values());
+        List<T> nodes = new ArrayList<>();
+        nodes.addAll(virtualForServer.keySet());
+        return nodes;
+    }
+
+    public boolean containsNode(T node){
+        return this.serversMap.containsKey( nodeToByteConverter.convert(node));
     }
 
     public void printkeyValueHash(){
@@ -121,11 +127,12 @@ public class Hasher<T> implements iHasher<T>{
         return serversMap;
     }
 
-    public ArrayList<T> getNextServers(T server,int number){
-        Preconditions.checkArgument(number < virtualForServer.size(), "Too many next servers inserted");
+    public ArrayList<T> getPreferenceList(T server, int number){
+        Preconditions.checkArgument(number <= virtualForServer.keySet().size(), "The number of node present is less than the preference list size required");
 
-        List<ByteBuffer> virtuals = virtualForServer.get(server);
-        ByteBuffer bbNext = virtuals.get(0);  //first entry is the Bytebuffer of the physical server
+        ArrayList<ByteBuffer> virtuals = virtualForServer.get(server);
+
+        ByteBuffer bbNext = virtuals.get(0);     // first entry is the Bytebuffer of the first physical server.
         ArrayList<T> nexts = new ArrayList<>();
 
         while(number > 0) {
