@@ -71,7 +71,6 @@ public class testGossipStorageService {
             clients.get(0).send("127.0.0.3",Helper.STORAGE_PORT, req1);
 
             Thread.sleep(15000);
-
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -105,22 +104,21 @@ public void testNodeQuorum(){
         Thread.sleep(15000);
 
         //Check if the nodes discovered each other
-        /*
         for (int i = 0; i < clusterMembers; ++i) {
-            Assert.assertEquals(NUM_NODES-1, clients.get(i).getGossipmanager().getMemberList().size());
-            Assert.assertEquals(NUM_NODES, clients.get(i).get_storageService().getcHasher().getServersMap().values().size());
-        }*/
+            Assert.assertEquals((NUM_NODES * (Helper.NUM_NODES_VIRTUALS))-1, clients.get(i).getGossipmanager().getMemberList().size());
+        }
 
         String key="Davide";
-        AppMsg req = new RequestAppMsg<String>(AppMsg.OPERATION.PUT, key, "Neri");
+        AppMsg req = new RequestAppMsg<>(AppMsg.OPERATION.PUT, key, "Neri");
         clients.get(0).send("127.0.0.3", Helper.STORAGE_PORT, req);
 
         Thread.sleep(10000);
+
         //check if 127.0.0.3 has received the key
         Assert.assertTrue(clients.get(2).get_storageService().getStorage().containsKey(key));
 
 
-        AppMsg req1 = new RequestAppMsg<String>(AppMsg.OPERATION.GET, key, "");
+        AppMsg req1 = new RequestAppMsg<>(AppMsg.OPERATION.GET, key, "");
         clients.get(0).send("127.0.0.3",Helper.STORAGE_PORT, req1);
 
         Thread.sleep(15000);
@@ -128,5 +126,5 @@ public void testNodeQuorum(){
     } catch (InterruptedException e) {
         e.printStackTrace();
     }
-}
+    }
 }

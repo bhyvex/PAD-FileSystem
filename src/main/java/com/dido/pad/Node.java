@@ -47,24 +47,23 @@ public class Node  {
         this.numReplicas = numReplicas;
     }
 
-    public Node(String ipAddress, String id, int portStorage, int portGossip){
+    public Node(String ipAddress, String id, int portStorage, int portGossip, List<GossipMember> gossipMembers){
+        this(ipAddress, id, portStorage,portGossip, LogLevel.CONFIG_INFO, gossipMembers, new GossipSettings());
+    }
+
+    public Node(String ipAddress, String id, int portStorage, int portGossip, String level, List<GossipMember> gossipMembers, GossipSettings settings) {
         this.ipAddress = ipAddress;
         this.id = id;
         this.portStorage = portStorage;
         this.portGossip = portGossip;
-    }
-
-    public Node(String ipAddress, String id, int portStorage, int portGossip, String level, List<GossipMember> gossipMembers, GossipSettings settings) {
-        this(ipAddress,id,portStorage,portGossip);
         try {
-            //TODO String level can be eliminated and taken directly from config file
             _gossipService = new GossipService(ipAddress,portGossip,id, LogLevel.fromString(level),gossipMembers, settings,this::gossipEvent);
+            _storageService = new StorageService(this, gossipMembers);
+            _storageService.addServer(this);
 
         } catch (InterruptedException | UnknownHostException e) {
             e.printStackTrace();
         }
-        _storageService = new StorageService(this, gossipMembers);
-        this._storageService.addServer(this);
     }
 
     public void start(){
@@ -72,29 +71,21 @@ public class Node  {
         _storageService.start();
     }
 
-    // Node from a GossipMember. Used when a GossipMemeber goes UP.
+    // Node from a GossipMember.
+    // Used when a GossipMemeber goes UP
     public Node(GossipMember member){
-        this(member.getHost(), member.getId(), Helper.STORAGE_PORT, member.getPort());
+        this.ipAddress = member.getHost();
+        this.id =  member.getId();
+        this.portStorage = Helper.STORAGE_PORT;
+        this.portGossip = member.getPort();
+
     }
 
 
     private void startGossipService(int logLevel, List<GossipMember> gossipMembers, GossipSettings settings, GossipListener listener)
             throws UnknownHostException, InterruptedException {
-        //_gossipService = new GossipService(this.ipAddress,this.portGossip,this.id, logLevel,gossipMembers,settings,listener);
         _gossipService.start();
 
-        //_storageService = new StorageService(this, gossipMembers);
-        /*
-        // start storage servic
-        this._storageService = new StorageService(this);
-        this._storageService.addServer(this);
-        this._storageService.start();
-
-        // ADD seed nodes to the node storage service
-        for (GossipMember member : gossipMembers) {
-            if(!member.getHost().equals(this.getIpAddress()))
-                this._storageService.addServer(new Node(member));
-        }*/
     }
 
     public GossipManager getGossipmanager(){
@@ -104,17 +95,7 @@ public class Node  {
 
     // only for test the storage service
     private  void startStorageService(){
-        //this._storageService = new StorageService(this);
         this._storageService.start();
-
-        // ADD seed nodes to the node storage service ( int the Storage Service)
-        //_gossipService.get_gossipManager().getMemberList();
-      //  System.out.println("GOSSIP"+_gossipService.get_gossipManager().getMemberList().size());
-        //for (GossipMember member : _gossipService.get_gossipManager().getMemberList()) {
-          //  if(!member.getHost().equals(this.getIpAddress()))
-            //    this._storageService.addServer(new Node(member));
-        //}
-
     }
 
     //only for test the storage system

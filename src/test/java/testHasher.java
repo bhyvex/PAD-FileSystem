@@ -3,6 +3,7 @@ import com.dido.pad.Helper;
 import com.dido.pad.Node;
 import com.dido.pad.consistenthashing.Hasher;
 import com.dido.pad.consistenthashing.iHasher;
+import com.google.code.gossip.GossipMember;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -17,27 +18,28 @@ public class testHasher {
     @Test
     public void testOneServer(){
         Hasher<Node> hasher = new Hasher<>(1,iHasher.SHA1,iHasher.getNodeToBytesConverter());
+        List<GossipMember> l =  new ArrayList<>();
 
-        Node n1 = new Node("127.0.0.1","id1", Helper.STORAGE_PORT, Helper.GOSSIP_PORT);
+        Node n1 = new Node("127.0.0.1","id1", Helper.STORAGE_PORT, Helper.GOSSIP_PORT,l);
         hasher.addServer(n1);
 
         StorageData d = new StorageData<String>("AAAA","first data");
         StorageData d2 = new StorageData<String>("ZZZZ","second data");
 
         Assert.assertEquals(hasher.getServerForData(d.getKey()),n1);
-        Assert.assertEquals(hasher.getServerForData(d.getKey()),n1);
-
         n1.shutdown();
-    }
 
+    }
+/*
     @Test
     public void testMoreServer(){
         Hasher<Node> hasher = new Hasher<>(1,iHasher.SHA1, iHasher.getNodeToBytesConverter() );
 
-        Node n1 = new Node("127.0.0.1","id1", Helper.STORAGE_PORT,Helper.GOSSIP_PORT);
-        Node n2 = new Node("127.0.0.2","id2",Helper.STORAGE_PORT,Helper.GOSSIP_PORT);
-        Node n3 = new Node("127.0.0.3","id3",Helper.STORAGE_PORT,Helper.GOSSIP_PORT);
-        Node n4 = new Node("127.0.0.4","id4",Helper.STORAGE_PORT,Helper.GOSSIP_PORT);
+        List<GossipMember> l = new ArrayList<>();
+        Node n1 = new Node("127.0.0.1","id1", Helper.STORAGE_PORT,Helper.GOSSIP_PORT,l);
+        Node n2 = new Node("127.0.0.2","id2",Helper.STORAGE_PORT,Helper.GOSSIP_PORT,l);
+        Node n3 = new Node("127.0.0.3","id3",Helper.STORAGE_PORT,Helper.GOSSIP_PORT,l);
+        Node n4 = new Node("127.0.0.4","id4",Helper.STORAGE_PORT,Helper.GOSSIP_PORT,l);
 
         hasher.addServer(n1);
         hasher.addServer(n2);
@@ -52,11 +54,6 @@ public class testHasher {
         Node node = hasher.getServerForData(d2.getKey());
         Assert.assertEquals(node,n4);
 
-        n1.shutdown();
-        n2.shutdown();
-        n3.shutdown();
-        n3.shutdown();
-        n4.shutdown();
 
     }
 
@@ -66,10 +63,12 @@ public class testHasher {
         int virtualNodes = 2;
         Hasher<Node> hasher = new Hasher<>(virtualNodes, iHasher.SHA1,iHasher.getNodeToBytesConverter());
 
-        Node n1 = new Node("127.0.0.1","id1", Helper.STORAGE_PORT,Helper.GOSSIP_PORT);
-        Node n2 = new Node("127.0.0.2","id2", Helper.STORAGE_PORT,Helper.GOSSIP_PORT);
-        Node n3 = new Node("127.0.0.3","id3", Helper.STORAGE_PORT,Helper.GOSSIP_PORT);
-        Node n4 = new Node("127.0.0.4","id4", Helper.STORAGE_PORT,Helper.GOSSIP_PORT);
+        List<GossipMember> l = new ArrayList<>();
+
+        Node n1 = new Node("127.0.0.1","id1", Helper.STORAGE_PORT,Helper.GOSSIP_PORT,l);
+        Node n2 = new Node("127.0.0.2","id2", Helper.STORAGE_PORT,Helper.GOSSIP_PORT,l);
+        Node n3 = new Node("127.0.0.3","id3", Helper.STORAGE_PORT,Helper.GOSSIP_PORT,l);
+        Node n4 = new Node("127.0.0.4","id4", Helper.STORAGE_PORT,Helper.GOSSIP_PORT,l);
 
         hasher.addServer(n1);
         hasher.addServer(n2);
@@ -81,7 +80,7 @@ public class testHasher {
         //System.out.print(n);
         Assert.assertEquals(n,n3);
 
-        /* get Next nodes froma serve*/
+        // get Next nodes froma serve
         //hasher.printkeyValueHash();
         ArrayList<Node> nexts = hasher.getPreferenceList(n3,2);  //next(n3) = [id2, id1]
         ArrayList<Node> list =new ArrayList<Node>();
@@ -89,7 +88,7 @@ public class testHasher {
         list.add(n1);
         Assert.assertEquals(nexts, list);
 
-        /*remove physical server*/
+        //remove physical server
         hasher.removeServer(n3);   //remove physical server
         List<Node> nodes =  hasher.getAllNodes();
         Assert.assertEquals(nodes.size(), virtualNodes*3);
@@ -97,14 +96,8 @@ public class testHasher {
         Node node = hasher.getServerForData(d.getKey());
         Assert.assertEquals(node,n2);
 
-
-
-        n1.shutdown();
-        n2.shutdown();
-        n3.shutdown();
-        n3.shutdown();
-        n4.shutdown();
     }
+*/
 
 }
 

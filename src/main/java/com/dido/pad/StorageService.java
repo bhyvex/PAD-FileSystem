@@ -43,9 +43,8 @@ public class StorageService extends Thread{
 
 
     public StorageService(Node node, List<GossipMember> seedNodes){
-        //TODO number of virtual nodes to be put into configurtion file
-        int numberVirtual = 1;
-        this.cHasher  = new Hasher<Node>(numberVirtual,iHasher.SHA1,iHasher.getNodeToBytesConverter());
+
+        this.cHasher  = new Hasher<>(Helper.NUM_NODES_VIRTUALS,iHasher.SHA1,iHasher.getNodeToBytesConverter());
         this.myNode = node;
         storage = new PersisentStorage();
 
@@ -106,18 +105,20 @@ public class StorageService extends Thread{
 
     @Override
     public void run(){
-        while(N_REPLICAS > cHasher.getAllNodes().size() ){
-            StorageService.LOGGER.info( this.myNode.getIpAddress()+" - Waiting ... Required "+N_REPLICAS+" backup node, Have " +cHasher.getAllNodes().size());
-            try {
-               Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        StorageService.LOGGER.info( this.myNode.getIpAddress()+" - FOUND Required "+N_REPLICAS+" backup node, Have " +cHasher.getAllNodes().size());
-        preferenceNodes = cHasher.getPreferenceList(this.myNode, N_REPLICAS);
 
         while(keepRunning.get()){
+
+            while(N_REPLICAS > cHasher.getAllNodes().size() ){
+                StorageService.LOGGER.info( this.myNode.getIpAddress()+" -  Required "+N_REPLICAS+" backup node, found " +cHasher.getAllNodes().size());
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            //StorageService.LOGGER.info( this.myNode.getIpAddress()+" - FOUND Required "+N_REPLICAS+" backup node, Have " +cHasher.getAllNodes().size());
+            preferenceNodes = cHasher.getPreferenceList(this.myNode, N_REPLICAS);
+
             try {
                 byte [] buff = new byte[udpServer.getReceiveBufferSize()];
                 DatagramPacket p = new DatagramPacket(buff, buff.length);
@@ -240,8 +241,7 @@ public class StorageService extends Thread{
         switch (msg.getOperation()) {
              case PUT:
                 StorageService.LOGGER.info( this.myNode.getIpAddress()+" - RECEIVED MSG "+msg.getOperation() +" <" + msg.getKey()+":"+msg.getValue()+"> from "+msg.getIpSender());
-
-                 if(storage.containsKey(msg.getKey())){// UPDATE data  Version
+                  if(storage.containsKey(msg.getKey())){// UPDATE data  Version
                     Versioned d = storage.get(msg.getKey());
                     d.getData().setValue(msg.getValue());
                     d.getVectorclock().incremenetVersion(myNode.getIpAddress());
@@ -267,11 +267,6 @@ public class StorageService extends Thread{
 
 
                     List<ReplySystemMsg> replies = askQuorum(vdata,Helper.QUORUM_PORT, AppMsg.OPERATION.GET);
-
-                    for (ReplySystemMsg m :
-                            replies) {
-                        System.out.println(m.getData().getVectorclock());
-                    }
 
                     //4) merge version
                     //5) sent reconcilied version

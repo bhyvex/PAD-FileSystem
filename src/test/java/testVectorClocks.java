@@ -5,29 +5,33 @@ import com.dido.pad.Node;
 import com.dido.pad.VectorClocks.Versioned;
 import com.dido.pad.datamessages.AppMsg;
 import com.dido.pad.datamessages.RequestSystemMsg;
+import com.google.code.gossip.GossipMember;
+import com.google.code.gossip.GossipSettings;
+import com.google.code.gossip.LogLevel;
+import com.google.code.gossip.RemoteGossipMember;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by dido-ubuntu on 15/03/16.
  */
 public class testVectorClocks {
-/**
+/*
     @Test
     public void testVectors() throws InterruptedException {
 
-        Node n1 = new Node("127.0.0.1","node1", Helper.STORAGE_PORT,Helper.GOSSIP_PORT);
-        Node n2 = new Node("127.0.0.2","node2", Helper.STORAGE_PORT,Helper.GOSSIP_PORT);
-        n1.startStorageService();
-        n2.startStorageService();
+        List<GossipMember> startupMembers = new ArrayList<>();
+        startupMembers.add(new RemoteGossipMember("127.0.0.1", Helper.GOSSIP_PORT, "node1"));
 
-        //when the node receive a PUT AppMsg and it has not the data.
-          //  1) create message
-           // 2) increment local vector clock for the data
-           //3) send mesg to destiantion
-         //
+        Node n1 = new Node("127.0.0.1","node1", Helper.STORAGE_PORT, Helper.GOSSIP_PORT, startupMembers);
+        Node n2 = new Node("127.0.0.2","node2", Helper.STORAGE_PORT, Helper.GOSSIP_PORT ,startupMembers);
 
-        Versioned d1 = new Versioned(new StorageData<>("key","value"));
-        d1.getVectorclock().incremenetVersion(n1.getId());
+        n1.start();
+        n2.start();
+
+
         RequestSystemMsg msg = new RequestSystemMsg(AppMsg.OPERATION.PUT,"127.0.0.1", Helper.STORAGE_PORT,d1);
         n1.send("127.0.0.2", Helper.STORAGE_PORT, msg);
 
@@ -37,6 +41,6 @@ public class testVectorClocks {
 
 
 
-
-    }**/
+    }
+*/
 }
