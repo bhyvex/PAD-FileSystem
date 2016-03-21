@@ -1,9 +1,9 @@
-
 target/
 
 ######################
 ## Intellj ignore 
 ######################
+
 
 
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio and Webstorm
@@ -13,7 +13,7 @@ target/
 .idea/workspace.xml
 .idea/tasks.xml
 .idea/dictionaries
-#.idea/vcs.xml
+.idea/vcs.xml
 .idea/jsLibraryMappings.xml
 
 # Sensitive or high-churn files:
