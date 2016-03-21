@@ -53,12 +53,6 @@ public class Node  {
         this.portStorage = portStorage;
         this.portGossip = portGossip;
     }
-/*
-    public Node(String ipAddress, String id, int portStorage, int portGossip, int numReplicas){
-        this(ipAddress,id,portStorage,portGossip);
-        this.numReplicas = numReplicas;
-    }*/
-
 
     public Node(String ipAddress, String id, int portStorage, int portGossip, String level, List<GossipMember> gossipMembers, GossipSettings settings) {
         this(ipAddress,id,portStorage,portGossip);
@@ -208,7 +202,7 @@ public class Node  {
     public void sendToStorageNode(AppMsg msg){
         /* send  message to the same storage  node */
         //System.out.println("sendToStorage from same node "+this.ipAddress);
-        this.send(this.ipAddress, this.getPortStorage(),msg);
+        this.send(this.ipAddress, getPortStorage(),msg);
     }
 
     public void send(String destIp, int destPort, AppMsg msg){

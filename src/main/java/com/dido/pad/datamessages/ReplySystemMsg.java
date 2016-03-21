@@ -22,4 +22,20 @@ public class ReplySystemMsg extends AppMsg {
         super(TYPE.REPLY, operation, ipSender, portSender);
         this.msg = msg;
     }
+
+    public Versioned getData() {
+        return data;
+    }
+
+    public void setData(Versioned data) {
+        this.data = data;
+    }
+
+    public String getMsg() {
+        return msg;
+    }
+
+    public void setMsg(String msg) {
+        this.msg = msg;
+    }
 }

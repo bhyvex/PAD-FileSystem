@@ -14,6 +14,7 @@ import org.apache.log4j.Logger;
 import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -29,38 +30,36 @@ public class StorageService extends Thread{
     public static final Logger LOGGER = Logger.getLogger(StorageService.class);
 
     public int N_REPLICAS = 2;
-    public int WRITE_NODES = 2;
-    public int READ_NODES = 1;
+    public int WRITE_NODES = 1 ;
+    public int READ_NODES = 2;
 
     private Hasher<Node> cHasher;
     private PersisentStorage storage;
     private DatagramSocket udpServer;
     private AtomicBoolean keepRunning;
-   // private int numReplicas;
+
     private List<Node> preferenceNodes;
     private Node myNode;
 
 
     public StorageService(Node node, List<GossipMember> seedNodes){
-        //TODO number of virtual nodes to be put into configutaion file
+        //TODO number of virtual nodes to be put into configurtion file
         int numberVirtual = 1;
         this.cHasher  = new Hasher<Node>(numberVirtual,iHasher.SHA1,iHasher.getNodeToBytesConverter());
         this.myNode = node;
         storage = new PersisentStorage();
 
-
         // ADD seed nodes to the node storage service
         for (GossipMember member : seedNodes) {
             Node n = new Node(member);
             if(!cHasher.containsNode(n))
-                        cHasher.addServer(n);
-                //addServer(new Node(member));
+                cHasher.addServer(n);
         }
 
         keepRunning = new AtomicBoolean(true);
         try {
             SocketAddress sAddress= new InetSocketAddress(node.getIpAddress(), Helper.STORAGE_PORT);
-            StorageService.LOGGER.info(this.myNode.getIpAddress()+ "- Storage Service succesfully initialized on portStorage "+ Helper.STORAGE_PORT);
+            StorageService.LOGGER.info(this.myNode.getIpAddress()+ "- initialized on portStorage "+ Helper.STORAGE_PORT);
             StorageService.LOGGER.debug("I'm " + node.toString());
             udpServer = new DatagramSocket(sAddress);
         } catch (SocketException e) {
@@ -122,7 +121,7 @@ public class StorageService extends Thread{
             try {
                 byte [] buff = new byte[udpServer.getReceiveBufferSize()];
                 DatagramPacket p = new DatagramPacket(buff, buff.length);
-                StorageService.LOGGER.info( this.myNode.getIpAddress()+" - Storage Service waiting messages...");
+                StorageService.LOGGER.info( this.myNode.getIpAddress()+" - waiting messages...");
                 udpServer.receive(p);
 
                 int packet_length = 0;
@@ -193,23 +192,26 @@ public class StorageService extends Thread{
                 //TODO never recevied a data that is already present ?
                 //TODO set the Primary master node into the vData ???
                 storage.put(vData);
-                myNode.send(msg.getIpSender(),Helper.STORAGE_PORT+1, new ReplySystemMsg(AppMsg.OPERATION.OK,myNode.getIpAddress(),Helper.STORAGE_PORT+1,"PUT SUccesful QUIRUM"));
+
+                myNode.send(msg.getIpSender(),Helper.QUORUM_PORT, new ReplySystemMsg(AppMsg.OPERATION.OK,myNode.getIpAddress(),Helper.STORAGE_PORT+1,"PUT Succesfully QUORUM"));
                     /*  else{
                    Versioned myVData = storage.get(key); //my version of the data
                    myVData.getVectorclock()
                     }*/
+
                 break;
             case GET:
                 StorageService.LOGGER.info( this.myNode.getIpAddress()+" - GET SystemMsg received ");
                 if(storage.containsKey(msg.getKey())){
                     Versioned myData = storage.get(msg.getKey());
                     ReplySystemMsg reply = new ReplySystemMsg(AppMsg.OPERATION.OK, myNode.getIpAddress(), Helper.STORAGE_PORT,myData);
-                    myNode.send(msg.getIpSender(), Helper.STORAGE_PORT,reply);
+                    //TODO change from Storage-Port to Quorum Port (Read quorum)
+                    myNode.send(msg.getIpSender(), Helper.QUORUM_PORT,reply);
                 }
                 else{
                     String info = myNode.getIpAddress()+" - data is not present into my storage";
                     RequestSystemMsg replyErr = new RequestSystemMsg(AppMsg.OPERATION.ERR, msg.getIpSender(),Helper.STORAGE_PORT,info);
-                    myNode.send(msg.getIpSender(),Helper.STORAGE_PORT, replyErr);
+                    myNode.send(msg.getIpSender(),Helper.QUORUM_PORT, replyErr);
                 }
                 break;
             case LIST:
@@ -236,13 +238,14 @@ public class StorageService extends Thread{
 
     private void manageAppRequest(RequestAppMsg<?> msg){
         switch (msg.getOperation()) {
-             case PUT: // PUT or UPDATE a data
+             case PUT:
                 StorageService.LOGGER.info( this.myNode.getIpAddress()+" - RECEIVED MSG "+msg.getOperation() +" <" + msg.getKey()+":"+msg.getValue()+"> from "+msg.getIpSender());
-                 if(storage.containsKey(msg.getKey())){// UPDATE data and Version
+
+                 if(storage.containsKey(msg.getKey())){// UPDATE data  Version
                     Versioned d = storage.get(msg.getKey());
                     d.getData().setValue(msg.getValue());
                     d.getVectorclock().incremenetVersion(myNode.getIpAddress());
-                    myNode.sendToStorageNode(new ReplyAppMsg(AppMsg.OPERATION.OK, " Update succesfully key:"+msg.getKey()));
+                    myNode.sendToStorageNode(new ReplyAppMsg(AppMsg.OPERATION.OK, " Updated succesfully key:"+msg.getKey()));
                 }
                 else{ // PUT new object
                      Versioned vData = new Versioned<>(new StorageData(msg.getKey(), msg.getValue()));
@@ -250,7 +253,8 @@ public class StorageService extends Thread{
                      this.storage.put(vData);
                      StorageService.LOGGER.info(this.myNode.getIpAddress() + " - Inserted <" + msg.getKey() + ":" + msg.getValue() + "> into local database");
 
-                     sentPutQuorum(vData);  //with quorum (at least W_NODES must write the data)
+                     //TODO send ok before Quorum Request :  writable first policy
+                     askQuorum(vData, Helper.QUORUM_PORT, AppMsg.OPERATION.PUT);
 
                      myNode.send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OPERATION.OK, " PUT  <" + msg.getKey() + ":" + msg.getValue() + ">"));
                 }
@@ -259,16 +263,19 @@ public class StorageService extends Thread{
                 String key = msg.getKey();
                 StorageService.LOGGER.debug( this.myNode.getIpAddress()+" - RECEIVED MSG "+msg.getOperation()+"<"+ key+">");
                 if(storage.containsKey(key)) {
-                    //Versioned<?> vdata = storage.get(key);
-                    //1) sends read to backup nodes
-                    sentGetQuorum(key);
+                    Versioned<?> vdata = storage.get(key);
 
 
-                    //2) wait response
-                    //3)select highest VC from the returned vdata
+                    List<ReplySystemMsg> replies = askQuorum(vdata,Helper.QUORUM_PORT, AppMsg.OPERATION.GET);
+
+                    for (ReplySystemMsg m :
+                            replies) {
+                        System.out.println(m.getData().getVectorclock());
+                    }
+
                     //4) merge version
                     //5) sent reconcilied version
-                  //  myNode.send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OPERATION.OK, " GET "+ vdata.getData().toString()));
+                   //  myNode.send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OPERATION.OK, " GET "+ vdata.getData().toString()));
                 }
                 else {
                     myNode.send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OPERATION.ERR, " GET key not found"));
@@ -287,37 +294,24 @@ public class StorageService extends Thread{
         }
     }
 
-    /**
-     * Send a GET message to the backup nodes in order to receive the different versions for a data.
-     * @param key
-     */
-    private void sentGetQuorum(String key){
-        RequestSystemMsg reqGet = new RequestSystemMsg(AppMsg.OPERATION.GET, myNode.getIpAddress(),Helper.STORAGE_PORT,key);
-        for (Node bkup: preferenceNodes) {
-            myNode.send(bkup.getIpAddress(), Helper.STORAGE_PORT, reqGet);
-            StorageService.LOGGER.info( this.myNode.getIpAddress()+" - SENT GET to Backup node "+ bkup.getIpAddress());
+
+    public List<ReplySystemMsg> askQuorum(Versioned  vData, int listenPort, AppMsg.OPERATION op) {
+        RequestSystemMsg reqQuorum;
+
+        if(op.equals(AppMsg.OPERATION.PUT))
+             reqQuorum = new RequestSystemMsg(op, myNode.getIpAddress(),0,vData );
+        else{
+            reqQuorum = new RequestSystemMsg(op, myNode.getIpAddress(),0, vData.getData().getKey() );
         }
-
-    }
-
-    private void sentPutQuorum(Versioned vData) {
-
-        RequestSystemMsg sysMsg = new RequestSystemMsg(AppMsg.OPERATION.PUT, myNode.getIpAddress(), Helper.STORAGE_PORT, vData);
-
-        askReadQuorum(sysMsg, Helper.STORAGE_PORT + 1);
-
-    }
-
-    public boolean askReadQuorum(RequestSystemMsg msg, int listenPort) {
-
 
         try {
             DatagramSocket dsocket = new DatagramSocket(listenPort);
 
             // send msg to all the  nodes in the preference list
             for (Node backup : preferenceNodes) {
+
                 ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module());
-                byte[] jsonByte = mapper.writeValueAsBytes(msg);
+                byte[] jsonByte = mapper.writeValueAsBytes(reqQuorum);
 
                 int packet_length = jsonByte.length;
                 // Convert the packet length to the byte representation of the int.
@@ -336,29 +330,33 @@ public class StorageService extends Thread{
                 DatagramPacket packet = new DatagramPacket(buf, buf.length, destAddress, Helper.STORAGE_PORT);
 
                 dsocket.send(packet);
-                StorageService.LOGGER.info( this.myNode.getIpAddress()+" - SENT to Backup for Quorum "+msg.getType() +"  "+ backup.getIpAddress());
-
+                StorageService.LOGGER.info(this.myNode.getIpAddress() + " - SENT to Backup for Quorum " + reqQuorum.getType() + "  " + backup.getIpAddress());
             }
             dsocket.close();
 
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        } catch (SocketException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return _waitQuorum(reqQuorum.getOperation(), listenPort);
+    }
 
-        DatagramSocket udpQuorum;
+    private List<ReplySystemMsg> _waitQuorum(AppMsg.OPERATION op, int listenPort){
+
+        DatagramSocket udpQuorum;  //server listen Quorum response
+
+        int numResponses = (op == AppMsg.OPERATION.PUT) ? WRITE_NODES: READ_NODES;
+        ArrayList<ReplySystemMsg> replies = new ArrayList<>();
+
         try {
             udpQuorum= new DatagramSocket(listenPort);
+            //TODO insert timeout into configuration file
             udpQuorum.setSoTimeout(5000);
 
         //wait the response
-        for(int j =0; j < this.WRITE_NODES; j++){
+        for(int j =0; j < numResponses; j++){
             byte [] buff = new byte[udpQuorum.getReceiveBufferSize()];
             DatagramPacket p = new DatagramPacket(buff, buff.length);
-            StorageService.LOGGER.info( this.myNode.getIpAddress()+" - Storage Service waiting QUORUM msg response...");
+            StorageService.LOGGER.info( this.myNode.getIpAddress()+" - waiting "+numResponses + " QUORUM msg response...");
 
             udpQuorum.receive(p);
 
@@ -373,17 +371,20 @@ public class StorageService extends Thread{
             String receivedMessage = new String(json_bytes);
 
             ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module());
-            AppMsg msgQuorum = mapper.readValue(receivedMessage, AppMsg.class);
+            ReplySystemMsg msgQuorum = mapper.readValue(receivedMessage, ReplySystemMsg.class);
             StorageService.LOGGER.info( this.myNode.getIpAddress()+" - RECEIVED QUORUM MSG from "+msgQuorum.getIpSender());
+            replies.add(msgQuorum);
 
         }
+            udpQuorum.close();
         } catch (SocketException e) {
             StorageService.LOGGER.error(this.myNode.getIpAddress()+ " - "+ e);
         }
         catch (IOException e) {
             e.printStackTrace();
         }
-        return true;
+
+        return replies;
     }
 
     public void shutdown(){

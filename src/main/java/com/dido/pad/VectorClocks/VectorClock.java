@@ -65,7 +65,10 @@ public class VectorClock  implements Version {
 
     }
 
-
-
-
+    @Override
+    public String toString() {
+        return "VectorClock{" +
+                "vectorClock=" + vectorClock +
+                '}';
+    }
 }
