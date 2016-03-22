@@ -6,7 +6,7 @@ import org.junit.Test;
 /**
  * Created by dido-ubuntu on 15/03/16.
  */
-public class testVectorClocks {
+public class TestVectorClocks {
 
     @Test
     public void testVectors() throws InterruptedException {

@@ -1,6 +1,6 @@
 package com.dido.pad.datamessages;
 
-import com.dido.pad.VectorClocks.Versioned;
+import com.dido.pad.data.Versioned;
 
 /**
  * Created by dido-ubuntu on 16/03/16.

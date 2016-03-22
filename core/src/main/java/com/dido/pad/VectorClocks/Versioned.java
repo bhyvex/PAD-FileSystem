@@ -43,14 +43,5 @@ public class Versioned<T extends StorageData> {
     public void setData(T data) {
         this.data = data;
     }
-
-
-    /**
-     * Create a clone of this StorageData object such that the object pointed to
-     * is the same, but the VectorClock and StorageData wrapper is a shallow copy.
-     */
-    public Versioned<T> cloneVersioned() {
-        return new Versioned<>(this.getData(), this.vectorclock.clone());
-    }
 }
 

@@ -2,7 +2,6 @@ package com.dido.pad;
 
 import com.beust.jcommander.JCommander;
 import com.google.code.gossip.GossipSettings;
-import com.google.code.gossip.LogLevel;
 
 
 /**
@@ -16,7 +15,7 @@ public class PadFsNode {
         ParseArgs jct = new ParseArgs();
         new JCommander(jct, args);
 
-        Node node = new Node(jct.getIp(), jct.getId(), jct.getStoragePort(), jct.getGossipPort(),LogLevel.CONFIG_INFO, jct.getGossipMember(), new GossipSettings());
+        Node node = new Node(jct.getIp(), jct.getId(), jct.getStoragePort(), jct.getGossipPort(), jct.getGossipMember(), new GossipSettings());
         node.start();
 
     }
