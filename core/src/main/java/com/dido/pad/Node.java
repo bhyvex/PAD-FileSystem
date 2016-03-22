@@ -1,7 +1,5 @@
 package com.dido.pad;
 
-
-import com.dido.pad.consistenthashing.Hasher;
 import com.dido.pad.datamessages.AppMsg;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;

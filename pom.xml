@@ -6,11 +6,15 @@
 
     <groupId>com.dido.code.pad</groupId>
     <artifactId>pad-fs</artifactId>
+    <packaging>pom</packaging>
     <version>1.0-SNAPSHOT</version>
     <description>PAD File system project a.a 2015-16</description>
+    <modules>
+        <module>core</module>
+    </modules>
 
 
-     <repositories>
+    <repositories>
         <repository>
             <id>central</id>
             <name>Central Repository</name>
@@ -98,13 +102,6 @@
             <version>1.0</version>
         </dependency>
 
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>11.0.2</version>
-        </dependency>
-
-
 
         <!--Jackson library; send JSON into UDP socket-->
         <dependency>
@@ -139,6 +136,12 @@
         </dependency>
 
         <!--Jackson library; send JSON into UDP socket-->
+
+        <dependency>
+            <groupId>com.beust</groupId>
+            <artifactId>jcommander</artifactId>
+            <version>1.48</version>
+        </dependency>
 
 
     </dependencies>

@@ -11,6 +11,9 @@ public interface Version {
      *
      * @param v The other version
      */
-    public VectorClock.APPEN compare(Version v) throws Exception;
+    VectorClock.APPEN compare(Version v) throws Exception;
+
+    VectorClock incremenetVersion( String ip);
+
 
 }

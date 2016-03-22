@@ -189,15 +189,13 @@ public class StorageService extends Thread{
                 String key = vData.getData().getKey(); // key of the data
                 StorageService.LOGGER.info( this.myNode.getIpAddress()+" - PUT SystemMsg received key:" +key);
 
-                //if(!this.storage.containsKey(key))
-                //TODO never recevied a data that is already present ?
                 //TODO set the Primary master node into the vData ???
                 storage.put(vData);
 
                 myNode.send(msg.getIpSender(),Helper.QUORUM_PORT, new ReplySystemMsg(AppMsg.OPERATION.OK,myNode.getIpAddress(),Helper.STORAGE_PORT+1,"PUT Succesfully QUORUM"));
                     /*  else{
                    Versioned myVData = storage.get(key); //my version of the data
-                   myVData.getVectorclock()
+                   myVData.getVersion()
                     }*/
 
                 break;
@@ -241,19 +239,19 @@ public class StorageService extends Thread{
         switch (msg.getOperation()) {
              case PUT:
                 StorageService.LOGGER.info( this.myNode.getIpAddress()+" - RECEIVED MSG "+msg.getOperation() +" <" + msg.getKey()+":"+msg.getValue()+"> from "+msg.getIpSender());
-                  if(storage.containsKey(msg.getKey())){// UPDATE data  Version
+
+                 if(storage.containsKey(msg.getKey())){// UPDATE data  Version
                     Versioned d = storage.get(msg.getKey());
                     d.getData().setValue(msg.getValue());
-                    d.getVectorclock().incremenetVersion(myNode.getIpAddress());
-                    myNode.sendToStorageNode(new ReplyAppMsg(AppMsg.OPERATION.OK, " Updated succesfully key:"+msg.getKey()));
+                    d.getVersion().incremenetVersion(myNode.getIpAddress());
+                    myNode.sendToStorageNode(new ReplyAppMsg(AppMsg.OPERATION.OK, " Updated succesfully <key:"+msg.getKey() +":"+msg.getValue()+">"));
                 }
                 else{ // PUT new object
                      Versioned vData = new Versioned<>(new StorageData(msg.getKey(), msg.getValue()));
-                     vData.getVectorclock().incremenetVersion(myNode.getIpAddress());
+                     vData.getVersion().incremenetVersion(myNode.getIpAddress());
                      this.storage.put(vData);
                      StorageService.LOGGER.info(this.myNode.getIpAddress() + " - Inserted <" + msg.getKey() + ":" + msg.getValue() + "> into local database");
 
-                     //TODO send ok before Quorum Request :  writable first policy
                      askQuorum(vData, Helper.QUORUM_PORT, AppMsg.OPERATION.PUT);
 
                      myNode.send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OPERATION.OK, " PUT  <" + msg.getKey() + ":" + msg.getValue() + ">"));
@@ -265,8 +263,12 @@ public class StorageService extends Thread{
                 if(storage.containsKey(key)) {
                     Versioned<?> vdata = storage.get(key);
 
-
                     List<ReplySystemMsg> replies = askQuorum(vdata,Helper.QUORUM_PORT, AppMsg.OPERATION.GET);
+                    for (ReplySystemMsg r :
+                            replies) {
+                        System.out.print(r.getData().getVersion());
+
+                    }
 
                     //4) merge version
                     //5) sent reconcilied version
