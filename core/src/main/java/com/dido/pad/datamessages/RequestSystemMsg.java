@@ -14,13 +14,13 @@ public class RequestSystemMsg extends AppMsg {
     }
 
     //PUT the versioned storage data
-    public  RequestSystemMsg(OPERATION op, String ipSender, int portSender, Versioned data){
+    public  RequestSystemMsg(OP op, String ipSender, int portSender, Versioned data){
         super(TYPE.REQUEST,op,ipSender,portSender);
         this.data = data;
     }
 
     //GET request System message
-    public RequestSystemMsg(OPERATION op, String ipSender, int portSender, String key){
+    public RequestSystemMsg(OP op, String ipSender, int portSender, String key){
         super(TYPE.REQUEST, op,ipSender,portSender);
         this.data = null;
         this.key = key;
@@ -30,16 +30,14 @@ public class RequestSystemMsg extends AppMsg {
     public Versioned getVersionedData() {
         return data;
     }
-
+    public void setVersionedData(Versioned data) {
+        this.data = data;
+    }
     public String getKey() {
         return key;
     }
-
     public void setKey(String key) {
         this.key = key;
     }
 
-    public void setVersionedData(Versioned data) {
-        this.data = data;
-    }
 }

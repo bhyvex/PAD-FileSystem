@@ -1,14 +1,4 @@
-import com.dido.pad.StorageData;
-import com.dido.pad.Helper;
-import com.dido.pad.Node;
-import com.dido.pad.consistenthashing.DefaultFunctions;
-import com.dido.pad.consistenthashing.Hasher;
-import com.google.code.gossip.GossipMember;
-import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by dido-ubuntu on 08/03/16.

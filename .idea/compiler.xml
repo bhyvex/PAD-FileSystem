@@ -23,11 +23,13 @@
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="true" />
         <module name="app" />
+        <module name="cli" />
         <module name="core" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="app" target="1.8" />
+      <module name="cli" target="1.8" />
       <module name="core" target="1.8" />
       <module name="PAD-FileSystem" target="1.5" />
     </bytecodeTargetLevel>

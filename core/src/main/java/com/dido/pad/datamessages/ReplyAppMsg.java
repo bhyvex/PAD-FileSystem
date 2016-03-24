@@ -14,7 +14,7 @@ public class ReplyAppMsg extends AppMsg {
 
     }
 
-    public ReplyAppMsg(OPERATION operation, String msg) {
+    public ReplyAppMsg(OP operation, String msg) {
         super(TYPE.REPLY, operation);
         this.msg = msg;
     }

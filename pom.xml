@@ -13,7 +13,12 @@
     <modules>
         <module>core</module>
         <module>app</module>
+        <module>cli</module>
     </modules>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
 
     <repositories>
         <repository>
@@ -64,7 +69,7 @@
         <!--<dependency>-->
             <!--<groupId>it.cnr.isti.hpclab</groupId>-->
             <!--<artifactId>gossip</artifactId>-->
-            <!--<version>0.0.3</version>-->
+            <!--<vClock>0.0.3</vClock>-->
         <!--</dependency>-->
 
         <dependency>

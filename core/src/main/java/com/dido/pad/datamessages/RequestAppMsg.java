@@ -1,7 +1,5 @@
 package com.dido.pad.datamessages;
 
-import com.dido.pad.Node;
-
 /**
  * Created by dido-ubuntu on 10/03/16.
  */
@@ -11,7 +9,7 @@ public class RequestAppMsg<T> extends AppMsg{
     private T value;
 
 
-    public RequestAppMsg(OPERATION operation, String key, T value) {
+    public RequestAppMsg(OP operation, String key, T value) {
         super(TYPE.REQUEST, operation);
         this.key = key;
         this.value = value;

@@ -30,6 +30,7 @@ public class Node {
 
     // Empty constructor for jackson parser to JSON
     public Node() {
+
     }
 
     public int getNumReplicas() {
@@ -71,29 +72,12 @@ public class Node {
         this.id = member.getId();
         this.portStorage = Helper.STORAGE_PORT;
         this.portGossip = member.getPort();
+        _storageService = new StorageService(this);
     }
-
-//
-//    private void startGossipService(int logLevel, List<GossipMember> gossipMembers, GossipSettings settings, GossipListener listener)
-//            throws UnknownHostException, InterruptedException {
-//        _gossipService.start();
-//
-//    }
 
     public GossipManager getGossipmanager() {
         return _gossipService.get_gossipManager();
     }
-
-//
-//    // only for test the storage service
-//    private void startStorageService() {
-//        this._storageService.start();
-//    }
-//
-//    //only for test the storage system
-//    public StorageService getStorageService() {
-//        return this._storageService;
-//    }
 
     public String getIpAddress() {
         return ipAddress;
@@ -119,17 +103,22 @@ public class Node {
     }
 
     public void sendToStorage(AppMsg msg){
-        _storageService.sendToMe(msg);
+        _storageService.sendToMyStorage(msg);
     }
+
+
     /* callback of gossiping procedure if a node goes UP or DOWN  */
     private void gossipEvent(GossipMember member, GossipState state) {
         switch (state) {
             case UP:
-                _storageService.addServer(new Node(member));
+                Node nodeUP = new Node(member);
+                _storageService.addServer(nodeUP);
                 Node.LOGGER.info(this.getIpAddress() + "- UP event, node " + member.getHost() + " added to consistent hasher");
+                _storageService.manageUP(nodeUP);
+
+
                 break;
             case DOWN:
-                System.out.println("REMOVED DOWN ");
                 _storageService.removeServer(new Node(member));
                 Node.LOGGER.info(this.getIpAddress() + "- DOWN event, node " + member.getHost() + " removed from consistent hasher");
                 break;

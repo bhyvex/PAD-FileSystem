@@ -14,4 +14,6 @@ public interface Version {
     VectorClock.OCCUR compare(Version v);
 
     VectorClock increment( String ip);
+
+    void merge( Version v);
 }

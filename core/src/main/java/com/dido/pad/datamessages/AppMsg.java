@@ -16,28 +16,30 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 )
 
 @JsonSubTypes( {
-        @JsonSubTypes.Type(value=RequestAppMsg.class,name ="requestMsg"),
-        @JsonSubTypes.Type(value=ReplyAppMsg.class,name ="replyMsg"),
-        @JsonSubTypes.Type(value=RequestSystemMsg.class,name ="cotrolMsg")
+        @JsonSubTypes.Type(value=RequestAppMsg.class,name ="reqAppMsg"),
+        @JsonSubTypes.Type(value=ReplyAppMsg.class,name ="repAppMsg"),
+        @JsonSubTypes.Type(value=RequestSystemMsg.class,name ="reqCtrMsg"),
+        @JsonSubTypes.Type(value=ReplySystemMsg.class,name ="repCtrMsg"),
+        @JsonSubTypes.Type(value=RequestConflictMsg.class, name="conflictMsg")
 })
 
 public class AppMsg {
 
     public enum TYPE {REQUEST, REPLY}
-    public enum OPERATION {PUT,GET, LIST, OK, ERR}
+    public enum OP {PUT, GET, LIST, OK, ERR}
 
     private TYPE type;
-    private OPERATION operation;
+    private OP operation;
     private String ipSender;
     private int portSender;
 
-    public AppMsg(TYPE type, OPERATION operation, String ipSender, int portSender) {
+    public AppMsg(TYPE type, OP operation, String ipSender, int portSender) {
         this.type = type;
         this.operation = operation;
         this.ipSender = ipSender;
         this.portSender = portSender;
     }
-    public AppMsg(TYPE type, OPERATION operation){
+    public AppMsg(TYPE type, OP operation){
         this.type = type;
         this.operation = operation;
     }
@@ -71,11 +73,11 @@ public class AppMsg {
         this.type = type;
     }
 
-    public OPERATION getOperation() {
+    public OP getOperation() {
         return operation;
     }
 
-    public void setOperation(OPERATION operation) {
+    public void setOperation(OP operation) {
         this.operation = operation;
     }
 

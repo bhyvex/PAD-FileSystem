@@ -12,7 +12,7 @@ public class PersistentStorage {
     private HashMap<String, Versioned> database;
 
     public PersistentStorage() {
-        this.database = new HashMap<>();
+        this.database = new HashMap<String, Versioned>();
     }
 
     public HashMap<String, Versioned> getStorage(){
