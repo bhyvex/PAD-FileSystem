@@ -11,13 +11,17 @@ import com.google.code.gossip.RemoteGossipMember;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.PatternSyntaxException;
 
 public class ParseArgs {
 
     // main -ip ipAddress m1:gp:id m2:gp:id
 
-    @Parameter(description = "Start up Gossip members ")
+    @Parameter(description = "[ipGossipMember:gp:id] ")
     private List<String> gossipMember = new ArrayList<>();
+
+    @Parameter(names="--help", help=true, description=" Show this help message")
+    private boolean help = false;
 
     @Parameter(names = "-ip", description = "Ip address of the machine")
     private String ip = "127.0.0.1";
@@ -31,14 +35,27 @@ public class ParseArgs {
     @Parameter(names = "-sp", description = "Port of the storage service")
     private int storagePort = 3000;
 
-    public List<GossipMember> getGossipMember() {
-        List<GossipMember> startupMembers = new ArrayList<>();
+    public ArrayList<GossipMember> getGossipMember() {
+        ArrayList<GossipMember> startupMembers = new ArrayList<>();
+
         for (String m : gossipMember) {
-            String[]  att = m.split(":");
-            startupMembers.add(new RemoteGossipMember(att[0], Integer.parseInt(att[1]), att[2]));
+                String ip,id;
+                int portGossip;
+                String [] att = m.split(":");
+               /* if(att.length ==1) {
+                    ip = att[0];
+                    portGossip = Helper.GOSSIP_PORT;
+                    id = att[0];
+                } else{*/
+                    ip = att[0];
+                    portGossip = Integer.parseInt(att[1]);
+                    id = att[2];
+               // }
+                startupMembers.add(new RemoteGossipMember(ip,portGossip,id));
         }
         return startupMembers;
     }
+
 
     public String getIp() {
         return ip;
@@ -54,5 +71,9 @@ public class ParseArgs {
 
     public int getStoragePort() {
         return storagePort;
+    }
+
+    public boolean isHelp() {
+        return help;
     }
 }
