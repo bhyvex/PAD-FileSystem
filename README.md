@@ -17,3 +17,10 @@ Into the folder /target is ceated a jar with dependencies
 
 Go inside *app* folder
 `java -cp target/app-1.0-SNAPSHOT-jar-with-dependencies.jar com.dido.pad.app.AppRunner`
+
+
+## CLient command line
+
+In order to run the Client command line.
+
+`java -cp target/cli-1.0-SNAPSHOT-jar-with-dependencies.jar  com.dido.com.pad.cli.Cli `
