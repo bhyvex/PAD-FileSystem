@@ -56,7 +56,12 @@ public class Versioned {
         version.merge(v.getVersion());
     }
 
-
-
+    @Override
+    public String toString() {
+        return "Versioned{" +
+                "data=" + data +
+                ", version=" + version +
+                '}';
+    }
 }
 

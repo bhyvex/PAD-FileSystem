@@ -1,12 +1,13 @@
+package com.dido.pad.app;
+
 import com.dido.pad.Helper;
 import com.dido.pad.Node;
-import com.dido.pad.datamessages.AppMsg;
-import com.dido.pad.datamessages.RequestAppMsg;
+
 import com.google.code.gossip.GossipMember;
 import com.google.code.gossip.GossipSettings;
 import com.google.code.gossip.RemoteGossipMember;
-import org.junit.Assert;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,7 +18,7 @@ public class AppRunner {
 
     private static final int NUM_NODES = 3;
 
-    public static void main(String[] args){
+    public static void main(String[] args) throws IOException, InterruptedException {
         //startup gossip member
         GossipSettings settings = new GossipSettings();
         int seedNodes = 1;
@@ -38,7 +39,19 @@ public class AppRunner {
             n.start();
         }
 
-        try {
+        Thread.sleep(15000);
+     /*   while(true){
+            BufferedReader bufferReader = new BufferedReader(new InputStreamReader(System.in));
+            System.out.println("\nEnter a command (h for help):");
+            String read = bufferReader.readLine();
+
+            if(read != null){
+
+            }
+
+        }*/
+
+    /*    try {
             Thread.sleep(15000);
 
             //Check if the nodes discovered each other
@@ -70,10 +83,10 @@ public class AppRunner {
             clients.get(0).shutdown();
             //for (Node n : clients) {
              //   n.shutdown();
-            //}*/
+            //}
 
         } catch (InterruptedException e) {
             e.printStackTrace();
-        }
+        */
     }
 }

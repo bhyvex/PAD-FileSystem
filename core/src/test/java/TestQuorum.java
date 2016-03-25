@@ -18,7 +18,7 @@ import java.util.List;
 public class TestQuorum {
 
 
-    @Test
+
     public void testGetMerge(){
         //startup gossip member
         GossipSettings settings = new GossipSettings();
@@ -78,7 +78,7 @@ public class TestQuorum {
         }
     }
 
-    @Test
+
     public void testGetConcurrent(){
         //startup gossip member
         GossipSettings settings = new GossipSettings();

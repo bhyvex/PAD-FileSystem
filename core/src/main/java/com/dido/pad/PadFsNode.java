@@ -23,6 +23,7 @@ public class PadFsNode {
             jCommander.usage();
             return;
         }
+
         Node node = new Node(jct.getIp(), jct.getId(), jct.getStoragePort(), jct.getGossipPort(), jct.getGossipMember(), new GossipSettings());
         node.start();
 

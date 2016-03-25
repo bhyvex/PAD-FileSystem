@@ -2,6 +2,8 @@ package com.dido.pad;
 
 import com.dido.pad.data.Versioned;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.HashMap;
 
 /**
@@ -19,6 +21,10 @@ public class PersistentStorage {
         return  database;
     }
 
+    public boolean isEmpty(){
+        return database.isEmpty();
+    }
+
     public void put(Versioned v){
         database.put(v.getData().getKey(), v);
     }
@@ -30,4 +36,19 @@ public class PersistentStorage {
     public void update(Versioned v){
         database.put(v.getData().getKey(),v);
     }
+
+    @Override
+    public String toString() {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (String key : database.keySet()) {
+            if (stringBuilder.length() > 0) {
+                stringBuilder.append(" ");
+            }
+            String keyValue = database.get(key).getData().toString();
+            stringBuilder.append(keyValue);
+
+        }
+        return stringBuilder.toString();
+    }
+
 }
