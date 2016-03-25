@@ -73,7 +73,7 @@ public class TestHasher {
 
         // get Next nodes froma serve
         //hasher.printkeyValueHash();
-        ArrayList<Node> nexts = hasher.getPreferenceList(n3,2);  //next(n3) = [id2, id1]
+        ArrayList<Node> nexts = hasher.getNextServers(n3,2);  //next(n3) = [id2, id1]
         ArrayList<Node> list =new ArrayList<Node>();
         list.add(n2);
         list.add(n1);

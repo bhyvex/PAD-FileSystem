@@ -8,6 +8,7 @@ import org.apache.log4j.Logger;
 
 
 import java.net.*;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -27,6 +28,8 @@ public class Node {
     private int portStorage;
     private int portGossip;
     private int numReplicas;
+
+    private ArrayList<Node> oldNodes = new ArrayList<>();
 
     // Empty constructor for jackson parser to JSON
     public Node() {
@@ -60,19 +63,29 @@ public class Node {
         }
     }
 
-    public void start() {
-        _gossipService.start();
-        _storageService.start();
-    }
-
-    // Node from a GossipMember.
-    // Used when a GossipMemeber goes UP
+    // Creates a Node from a GossipMember.
+    // Used when a GossipMemeber goes UP, or create a Node from a GossipMember for the Hasher
     public Node(GossipMember member) {
         this.ipAddress = member.getHost();
         this.id = member.getId();
         this.portStorage = Helper.STORAGE_PORT;
         this.portGossip = member.getPort();
+        _storageService = new StorageService(this); //used to sendToStorage() method
+    }
+
+
+    //used in the Client Cli
+    public Node(String ipAddress, String id, int portStorage) {
+        this.ipAddress = ipAddress;
+        this.id = id;
+        this.portStorage = Helper.STORAGE_PORT;
         _storageService = new StorageService(this);
+    }
+
+
+    public void start() {
+        _gossipService.start();
+        _storageService.start();
     }
 
     public GossipManager getGossipmanager() {
@@ -114,13 +127,15 @@ public class Node {
                 Node nodeUP = new Node(member);
                 _storageService.addServer(nodeUP);
                 Node.LOGGER.info(this.getIpAddress() + "- UP event, node " + member.getHost() + " added to consistent hasher");
-                _storageService.manageUP(nodeUP);
-
-
+                if(oldNodes.contains(nodeUP))  //a previous existing node is going UP
+                    _storageService.manageUP(nodeUP);
                 break;
             case DOWN:
-                _storageService.removeServer(new Node(member));
+                Node n = new Node(member);
+                _storageService.removeServer(n);
                 Node.LOGGER.info(this.getIpAddress() + "- DOWN event, node " + member.getHost() + " removed from consistent hasher");
+                if(!oldNodes.contains(n))
+                    oldNodes.add(n);
                 break;
         }
     }

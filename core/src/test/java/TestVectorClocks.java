@@ -22,14 +22,12 @@ public class TestVectorClocks {
         Assert.assertEquals(VectorClock.OCCUR.BEFORE, vc.compare(vc2));
 
         vc2.increment("ip4");
-        vc2.increment("ip5");
 
         Assert.assertEquals(VectorClock.OCCUR.BEFORE, vc.compare(vc2));
 
         vc.increment("ip4");
         vc.increment("ip4");
-        vc.increment("ip5");
-        vc.increment("ip5");
+
 
         Assert.assertEquals(VectorClock.OCCUR.AFTER, vc.compare(vc2));
 
@@ -50,10 +48,10 @@ public class TestVectorClocks {
 
         Assert.assertEquals(VectorClock.OCCUR.BEFORE, v.compareTo(vCopy));
 
+        v.getVersion().increment("ip3");
         Assert.assertEquals(VectorClock.OCCUR.CONCURRENT, v.compareTo(vCopy));
 
         vCopy.mergeTo(v);
-
 
         Assert.assertEquals(VectorClock.OCCUR.BEFORE, v.compareTo(vCopy));
 

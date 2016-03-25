@@ -117,7 +117,7 @@ public class Hasher<T> implements IHasher<T> {
         return serversMap;
     }
 
-    public ArrayList<T> getPreferenceList(T server, int number) {
+    public ArrayList<T> getNextServers(T server, int number) {
         Preconditions.checkArgument(number <= virtualForServer.keySet().size(), "The number of node present is less than the preference list size required");
 
         ArrayList<ByteBuffer> virtuals = virtualForServer.get(server);
@@ -136,6 +136,26 @@ public class Hasher<T> implements IHasher<T> {
             }
         }
         return nexts;
+    }
+
+
+    public ArrayList<T> getPreviousServer(T server, int number){
+        ArrayList<ByteBuffer> virtuals = virtualForServer.get(server);
+
+        ByteBuffer bbPrevious = virtuals.get(0);     // first entry is the Bytebuffer of the  physical server.
+        ArrayList<T> privious = new ArrayList<>();
+
+        while (number > 0) {
+            bbPrevious = serversMap.lowerKey(bbPrevious);
+            if (bbPrevious == null) { // there is no they less than the server key.
+                bbPrevious = serversMap.firstKey();
+            }
+            if (!virtuals.contains(bbPrevious) && !privious.contains(serversMap.get(bbPrevious))) {
+                privious.add(serversMap.get(bbPrevious));
+                number--;
+            }
+        }
+        return privious;
     }
 
 

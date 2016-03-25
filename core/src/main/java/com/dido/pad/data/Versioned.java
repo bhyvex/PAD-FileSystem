@@ -52,6 +52,7 @@ public class Versioned {
     }
 
     public void mergeTo(Versioned v){
+        data = v.getData();
         version.merge(v.getVersion());
     }
 
