@@ -1,6 +1,7 @@
 package com.dido.pad.VectorClocks;
 
 
+import java.io.Serializable;
 import java.util.*;
 
 /**
@@ -8,7 +9,7 @@ import java.util.*;
  */
 
 
-public class VectorClock  implements Version {
+public class VectorClock  implements Version, Serializable {
     public enum OCCUR {BEFORE,AFTER,CONCURRENT}; //EQUAL,
 
     private HashMap<String, Long> vectorClock;

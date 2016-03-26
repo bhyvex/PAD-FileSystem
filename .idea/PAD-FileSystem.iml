@@ -28,5 +28,6 @@
     <orderEntry type="library" name="Maven: joda-time:joda-time:2.4" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.7.2" level="project" />
     <orderEntry type="library" name="Maven: com.beust:jcommander:1.48" level="project" />
+    <orderEntry type="library" name="Maven: org.mapdb:mapdb:1.0.8" level="project" />
   </component>
 </module>

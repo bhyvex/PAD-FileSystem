@@ -4,12 +4,14 @@ package com.dido.pad.data;
 import com.dido.pad.VectorClocks.VectorClock;
 import com.dido.pad.VectorClocks.Version;
 
+import java.io.Serializable;
+
 /**
  * A wrapper for an StorageData object that adds a Version.
  */
 
 
-public class Versioned {
+public class Versioned  implements Serializable{
 
     private StorageData<?> data;
 

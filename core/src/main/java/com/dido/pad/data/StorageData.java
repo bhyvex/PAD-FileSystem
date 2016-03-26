@@ -1,9 +1,11 @@
 package com.dido.pad.data;
 
+import java.io.Serializable;
+
 /**
  * Created by dido-ubuntu on 11/03/16.
  */
-public class StorageData<T>  {
+public class StorageData<T>  implements Serializable{
 
     private String key;
     private T value;

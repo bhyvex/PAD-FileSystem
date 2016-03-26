@@ -193,6 +193,14 @@
             <version>1.48</version>
         </dependency>
 
+        <!-- For persistent Storage-->
+        <dependency>
+            <groupId>org.mapdb</groupId>
+            <artifactId>mapdb</artifactId>
+            <version>1.0.8</version>
+        </dependency>
+
+
 
     </dependencies>
 </project>

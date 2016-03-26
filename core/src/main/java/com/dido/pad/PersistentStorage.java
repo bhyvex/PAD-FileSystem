@@ -1,50 +1,105 @@
 package com.dido.pad;
 
 import com.dido.pad.data.Versioned;
+import org.mapdb.DB;
+import org.mapdb.DBMaker;
+import org.mapdb.HTreeMap;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by dido-ubuntu on 10/03/16.
  */
 public class PersistentStorage {
 
-    private HashMap<String, Versioned> database;
+    private HTreeMap<String, Versioned> _treeMap;
+    private DB _db;
 
     public PersistentStorage() {
-        this.database = new HashMap<String, Versioned>();
+  //      this.database = new HashMap<String, Versioned>();
+        this("prova", false);
     }
 
-    public HashMap<String, Versioned> getStorage(){
-        return  database;
+    public PersistentStorage(String fileName){
+        this(fileName,false);
     }
+
+    public PersistentStorage(String fileName, boolean erase){
+        String dir = System.getProperty("java.io.tmpdir");
+        File filePath = new File(dir+"/"+fileName+".pad");
+        if(erase){
+            try {
+                Files.deleteIfExists(filePath.toPath());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        _db = DBMaker.newFileDB(filePath)
+                .snapshotEnable()
+                .closeOnJvmShutdown()
+                .make();
+        _treeMap= _db.getHashMap("storage");
+        _db.commit();
+
+    }
+    synchronized public void close() {
+        if(!_db.isClosed()) _db.close();
+    }
+
+    synchronized public boolean put(Versioned v){
+        if(!_treeMap.containsKey(v.getData().getKey())) {
+            _treeMap.put(v.getData().getKey(), v);
+            _db.commit();
+            return true;
+        }
+        return false;
+    }
+
+
+    synchronized public Versioned get(String key){
+         Versioned v = _treeMap.get(key);
+         return v;
+    }
+
+
 
     public boolean isEmpty(){
-        return database.isEmpty();
+        return _treeMap.isEmpty();
     }
 
-    public void put(Versioned v){
-        database.put(v.getData().getKey(), v);
+    synchronized public Map<String, Versioned> getStorage(){
+        return  _treeMap.snapshot();
     }
 
-    public boolean containsKey(String key){ return database.containsKey(key);}
 
-    public Versioned get(String key){ return database.get(key); }
+    public boolean containsKey(String key){
+        return _treeMap.containsKey(key);}
 
-    public void update(Versioned v){
-        database.put(v.getData().getKey(),v);
+
+    public boolean  update(Versioned v){
+        if(_treeMap.containsKey(v.getData().getKey())){
+            _treeMap.put(v.getData().getKey(), v);
+            _db.commit();
+            return true;
+        }
+        return false;
+        //database.put(v.getData().getKey(),v);
     }
 
     @Override
     public String toString() {
         StringBuilder stringBuilder = new StringBuilder();
-        for (String key : database.keySet()) {
+        for (String key : _treeMap.keySet()) {
             if (stringBuilder.length() > 0) {
                 stringBuilder.append(" ");
             }
-            String keyValue = database.get(key).getData().toString();
+            String keyValue = _treeMap.get(key).getData().toString();
             stringBuilder.append(keyValue);
 
         }

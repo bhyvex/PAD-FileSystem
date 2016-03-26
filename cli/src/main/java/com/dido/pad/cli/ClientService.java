@@ -17,10 +17,7 @@ import org.apache.log4j.Logger;
 import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -302,7 +299,7 @@ public class ClientService extends Thread {
                 }
                 break;
             case LIST:
-                HashMap<String, Versioned> db = this.storage.getStorage();
+                Map<String, Versioned> db = this.storage.getStorage();
                 if (!db.isEmpty()) {
                     send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " LIST " + db.toString()));
                 } else {
@@ -312,7 +309,6 @@ public class ClientService extends Thread {
                 break;
         }
     }
-
 
     public void sendToMyStorage(AppMsg msg) {
         /* send  message to the storage  node */
