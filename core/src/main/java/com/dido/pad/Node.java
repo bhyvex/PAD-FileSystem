@@ -75,7 +75,7 @@ public class Node {
 
 
     //used in the Client Cli
-    public Node(String ipAddress, String id, int portStorage) {
+    public Node(String ipAddress, String id) {
         this.ipAddress = ipAddress;
         this.id = id;
         this.portStorage = Helper.STORAGE_PORT;

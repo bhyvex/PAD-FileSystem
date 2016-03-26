@@ -15,18 +15,21 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
         property = "type"
 )
 
-@JsonSubTypes( {
-        @JsonSubTypes.Type(value=RequestAppMsg.class,name ="reqAppMsg"),
-        @JsonSubTypes.Type(value=ReplyAppMsg.class,name ="repAppMsg"),
-        @JsonSubTypes.Type(value=RequestSystemMsg.class,name ="reqCtrMsg"),
-        @JsonSubTypes.Type(value=ReplySystemMsg.class,name ="repCtrMsg"),
-        @JsonSubTypes.Type(value=RequestConflictMsg.class, name="conflictMsg")
-})
+@JsonSubTypes({
+        @JsonSubTypes.Type(value = RequestAppMsg.class, name = "reqAppMsg"),
+        @JsonSubTypes.Type(value = ReplyAppMsg.class, name = "repAppMsg"),
+        @JsonSubTypes.Type(value = RequestSystemMsg.class, name = "reqCtrMsg"),
+        @JsonSubTypes.Type(value = ReplySystemMsg.class, name = "repCtrMsg"),
+        @JsonSubTypes.Type(value = RequestConflictMsg.class, name = "conflictMsg"),
+        @JsonSubTypes.Type(value = RequestClientMsg.class, name = "reqClient"),
+        @JsonSubTypes.Type(value = ReplyClientMsg.class, name = "replyClient")
+}
+)
 
 public class AppMsg {
 
     public enum TYPE {REQUEST, REPLY}
-    public enum OP {PUT, GET, LIST, OK, ERR}
+    public enum OP {PUT, GET, LIST, OK, ERR, DSCV }  //DSCV = discovering for client request of gossipMembers in a SystemMsg
 
     private TYPE type;
     private OP operation;

@@ -20,6 +20,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -88,7 +89,24 @@ public class ClientService extends Thread {
     }
 
     public void addServer(Node n) {
-        cHasher.addServer(n);
+       // if(!cHasher.containsNode(n)) {
+            cHasher.addServer(n);
+        //    return true;
+        //}else
+        //    return false;
+    }
+
+    //update nodes of the storage service received from the selected node.
+    public void updateNodes(ArrayList<Node> nodes){
+        for (Node n : nodes) {
+            if (!cHasher.containsNode(n))
+                cHasher.addServer(n);
+        }
+        for (Node myNode : cHasher.getAllNodes()){
+            if(!nodes.contains(myNode))
+                cHasher.removeServer(myNode);
+        }
+
     }
 
     public void removeServer(Node n) {
@@ -99,7 +117,6 @@ public class ClientService extends Thread {
     @Override
     public void run() {
         while (keepRunning.get()) {
-
             try {
                 byte[] buff = new byte[udpServer.getReceiveBufferSize()];
                 DatagramPacket p = new DatagramPacket(buff, buff.length);
@@ -144,6 +161,7 @@ public class ClientService extends Thread {
                     ReplySystemMsg replyMsg = (ReplySystemMsg) msg;
                     manageSystemReply(replyMsg);
                 }
+
                 else if(msg instanceof RequestConflictMsg){
                     manageConflictMessage((RequestConflictMsg) msg);
                 }
@@ -156,6 +174,7 @@ public class ClientService extends Thread {
         }
        shutdown();
     }
+
 
     private void manageConflictMessage( RequestConflictMsg msg) {
         switch (msg.getType()) {
@@ -196,8 +215,6 @@ public class ClientService extends Thread {
                     RequestSystemMsg replyErr = new RequestSystemMsg(AppMsg.OP.ERR, msg.getIpSender(), Helper.STORAGE_PORT, info);
                     send(msg.getIpSender(), Helper.QUORUM_PORT, replyErr);
                 }
-                break;
-            case LIST:
                 break;
         }
     }
@@ -448,6 +465,12 @@ public class ClientService extends Thread {
         udpServer.close();
     }
 
+    public Node getRandomNode(){
+        ArrayList<Node> nodes = cHasher.getAllNodes();
+        Random rand = new Random();
+        int random = rand.nextInt(nodes.size());
+        return nodes.get(random);
+    }
 
   /*  public void manageUP(Node nodeUp) {
         ArrayList<Node> nexts = cHasher.getNextServers(client,1);

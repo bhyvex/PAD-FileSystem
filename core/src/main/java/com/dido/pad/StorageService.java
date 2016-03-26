@@ -163,19 +163,50 @@ public class StorageService extends Thread {
                     ReplySystemMsg replyMsg = (ReplySystemMsg) msg;
                     manageSystemReply(replyMsg);
                 }
+                /* Request Client message received*/
+                else if(msg instanceof RequestClientMsg){
+                    manageClientRequest((RequestClientMsg) msg);
+                }
                 else if(msg instanceof RequestConflictMsg){
                     manageConflictMessage((RequestConflictMsg) msg);
                 }
 
 
             } catch (IOException e) {
-               // StorageService.LOGGER.debug(myNode.getIpAddress()+"- has beeen shutdown ...");
+                StorageService.LOGGER.info(myNode.getIpAddress()+"- IOExcpetion "+e.getMessage());
                 keepRunning.set(false);
             }
         }
        shutdown();
     }
 
+
+    private void manageClientRequest(RequestClientMsg msg) {
+        StorageService.LOGGER.info(myNode.getIpAddress()+"- MSG OPERAORTN  "+msg.getOperation());
+        switch (msg.getOperation()) {
+            case DSCV:
+                StorageService.LOGGER.info(myNode.getIpAddress()+"- Received DSCV message from "+msg.getIpSender());
+                ArrayList<Node> myNodes = cHasher.getAllNodes();
+                ReplyClientMsg msgreply;
+                if(!myNodes.isEmpty()) {
+                    StringBuilder strBuilder = new StringBuilder();
+                    for (Node n : myNodes) {
+                        strBuilder.append(n.getIpAddress() + ":" + n.getId());
+                        strBuilder.append(" ");
+                    }
+
+                    msgreply = new ReplyClientMsg(AppMsg.OP.OK, myNode.getIpAddress(), myNode.getPortStorage(), strBuilder.toString());
+                }
+                else{
+                    msgreply = new ReplyClientMsg(AppMsg.OP.ERR, myNode.getIpAddress(), myNode.getPortStorage(), " I have no Nodes in my view");
+                }
+                send(msg.getIpSender(), Helper.CLIENT_PORT, msgreply);
+                StorageService.LOGGER.info(myNode.getIpAddress()+"- SENT reply to DISCOER message to "+msg.getIpSender());
+                break;
+        }
+
+
+    }
     private void manageConflictMessage( RequestConflictMsg msg) {
         switch (msg.getType()) {
             case REQUEST:
@@ -300,7 +331,7 @@ public class StorageService extends Thread {
                     send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " GET "+ myData.getData().toString()));
                 }
                     else {
-                    send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.ERR, " GET: key not found"));
+                    send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.ERR, " GET key not found"));
                 }
                 break;
             case LIST:
@@ -394,7 +425,7 @@ public class StorageService extends Thread {
                 DatagramPacket packet = new DatagramPacket(buf, buf.length, destAddress, Helper.STORAGE_PORT);
 
                 dsocket.send(packet);
-                StorageService.LOGGER.info(this.myNode.getIpAddress() + " - Sent "+op+" SystemMsg  "+backup.getIpAddress() );
+                StorageService.LOGGER.info(this.myNode.getIpAddress() + " - Sent "+op+"  SystemMsg  "+backup.getIpAddress() );
             }
             dsocket.close();
 

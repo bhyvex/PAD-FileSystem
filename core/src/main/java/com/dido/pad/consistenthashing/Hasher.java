@@ -85,14 +85,15 @@ public class Hasher<T> implements IHasher<T> {
         }
     }
 
-    public List<T> getAllNodes() {
-        List<T> nodes = new ArrayList<>();
+    public ArrayList<T> getAllNodes() {
+        ArrayList<T> nodes = new ArrayList<>();
         nodes.addAll(virtualForServer.keySet());
         return nodes;
     }
 
     public boolean containsNode(T node) {
-        return this.serversMap.containsKey(nodeToByteConverter.convert(node));
+        byte[] bb = nodeToByteConverter.convert(node);
+        return this.serversMap.containsKey(ByteBuffer.wrap(bb));
     }
 
     public void printkeyValueHash() {
