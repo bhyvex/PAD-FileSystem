@@ -51,7 +51,10 @@ public class StorageService extends Thread {
 
         this.cHasher = new Hasher<>(Helper.NUM_NODES_VIRTUALS, DefaultFunctions::SHA1, DefaultFunctions::BytesConverter);
         this.myNode = node;
-        storage = new PersistentStorage();
+
+        storage = new PersistentStorage(myNode.getId());
+
+        //storage = new PersistentStorage();
 
         // ADD seed nodes to the node storage service
         for (GossipMember member : seedNodes) {

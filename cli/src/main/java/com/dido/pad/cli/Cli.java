@@ -13,7 +13,9 @@ import java.util.HashMap;
 public class Cli{
 
     public static void main(String[] args) {
-        int NUM_NODES = 3;
+
+        int NUM_NODES = 1;
+        //int NUM_NODES = 3
 
         String ip = "127.0.0.254";
         String id = "client";
@@ -21,6 +23,7 @@ public class Cli{
 
         for(int i = 1 ; i <= NUM_NODES; i++)
             st.add(new RemoteGossipMember("127.0.0."+i, Helper.GOSSIP_PORT, "node"+i));
+
         Client c = new Client(ip,id, st);
 
 
