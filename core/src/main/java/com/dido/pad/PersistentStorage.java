@@ -31,7 +31,8 @@ public class PersistentStorage {
 
     public PersistentStorage(String fileName, boolean erase){
         String dir = System.getProperty("java.io.tmpdir");
-        File filePath = new File(dir+"/"+fileName+".pad");
+        File filePath = new File(dir+"/"+fileName+".padstorage");
+        StorageService.LOGGER.info("Persistent storage location "+filePath);
         if(erase){
             try {
                 Files.deleteIfExists(filePath.toPath());

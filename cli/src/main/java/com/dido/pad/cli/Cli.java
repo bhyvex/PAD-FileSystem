@@ -1,6 +1,7 @@
 package com.dido.pad.cli;
 
 import com.dido.pad.Helper;
+import com.dido.pad.cli.client.Client;
 import com.google.code.gossip.GossipMember;
 import com.google.code.gossip.RemoteGossipMember;
 
@@ -8,7 +9,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 public class Cli{
 
@@ -32,7 +32,7 @@ public class Cli{
         String help = " usage: \n put key value \n get key \n list ipAddress ";
 
         while(true) {
-            System.out.println("\nEnter a command (h for help):");
+            System.out.println("\n Insert a command [h for usage message]...");
             String input = null;
             try {
                 input = bufferReader.readLine();
@@ -49,7 +49,8 @@ public class Cli{
                 case ("list"):
                     c.list(cmds[1]);
                     break;
-
+                case ("rm"): // rm a node
+                    break ;
                 case ("h"):
                     System.out.println(help);
 

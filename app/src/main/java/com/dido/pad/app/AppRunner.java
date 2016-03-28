@@ -1,14 +1,17 @@
 package com.dido.pad.app;
 
+
 import com.dido.pad.Helper;
 import com.dido.pad.Node;
-
 import com.google.code.gossip.GossipMember;
 import com.google.code.gossip.GossipSettings;
 import com.google.code.gossip.RemoteGossipMember;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -28,65 +31,56 @@ public class AppRunner {
         }
 
         //create three local client
-        List<Node> clients = new ArrayList<>();
+        //List<Node> clients = new ArrayList<>();
+        HashMap<String,Node> clients = new HashMap<>();
         int clusterMembers = 3;
         for (int i = 1; i < clusterMembers + 1; ++i) {
-            Node node = new Node("127.0.0." + i, "node" + i, Helper.STORAGE_PORT, Helper.GOSSIP_PORT, startupMembers, settings);
-            clients.add(node);
+            String ip = "127.0.0." + i;
+            Node node = new Node(ip, "node" + i, Helper.STORAGE_PORT, Helper.GOSSIP_PORT, startupMembers, settings);
+            clients.put(ip, node);
         }
 
-        for (Node n : clients) {
+        for (Node n : clients.values()) {
             n.start();
         }
 
-        Thread.sleep(15000);
-     /*   while(true){
-            BufferedReader bufferReader = new BufferedReader(new InputStreamReader(System.in));
-            System.out.println("\nEnter a command (h for help):");
-            String read = bufferReader.readLine();
+        BufferedReader bufferReader = new BufferedReader(new InputStreamReader(System.in));
 
-            if(read != null){
+        String help = " usage: \n down nodeIp \n up nodeIP \n list ";
 
+        while(true) {
+            System.out.println("\n Insert a command [h for usage message]...");
+            String input = null;
+            try {
+                input = bufferReader.readLine();
+
+                String [] cmds = input.split("\\s+"); //slipts  white spaces
+
+                switch (cmds[0]) {
+                    case ("down"):
+                        String ip = cmds[1];
+                        if(clients.containsKey(ip))
+                            clients.get(ip).shutdown();
+                        break;
+                    case ("up"):
+                        String ipAddress = cmds[1];
+                        if(clients.containsKey(ipAddress))
+                            clients.get(ipAddress).start();
+                        break;
+                    case ("list"):
+                        //c.list(cmds[1]);
+                        break;
+                    case ("h"):
+                        System.out.println(help);
+
+                }
+            } catch (IOException e) {
+                System.err.println(e.getMessage());
             }
 
-        }*/
+        }
 
-    /*    try {
-            Thread.sleep(15000);
+        //Thread.sleep(15000);
 
-            //Check if the nodes discovered each other
-            for (int i = 0; i < clusterMembers; ++i) {
-                Assert.assertEquals((NUM_NODES * (Helper.NUM_NODES_VIRTUALS)) - 1, clients.get(i).getGossipmanager().getMemberList().size());
-            }
-
-            String key = "Davide";
-            AppMsg req = new RequestAppMsg<>(AppMsg.OP.PUT, key, "Neri");
-            req.setIpSender("127.0.0.3");
-            clients.get(2).sendToStorage(req);
-
-            Thread.sleep(3000);
-
-            //check if 127.0.0.3 has received the key
-            Assert.assertTrue(clients.get(2).get_storageService().getStorage().containsKey(key));
-
-            //update version with a PUT
-            AppMsg reqUpdate1 = new RequestAppMsg<>(AppMsg.OP.PUT, key, "Giangrande");
-            clients.get(2).sendToStorage(reqUpdate1);
-
-            Thread.sleep(1000);
-
-            AppMsg reqGet = new RequestAppMsg<>(AppMsg.OP.GET, key, "");
-            clients.get(2).sendToStorage(reqGet);
-
-            Thread.sleep(3000);
-
-            clients.get(0).shutdown();
-            //for (Node n : clients) {
-             //   n.shutdown();
-            //}
-
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        */
     }
 }

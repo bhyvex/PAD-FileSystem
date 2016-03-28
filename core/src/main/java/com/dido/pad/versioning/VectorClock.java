@@ -1,4 +1,4 @@
-package com.dido.pad.VectorClocks;
+package com.dido.pad.versioning;
 
 
 import java.io.Serializable;
@@ -63,7 +63,7 @@ public class VectorClock  implements Version, Serializable {
     }
 
     /**
-     * Compare two VectorClocks, the outcomes will be one of the following: <br>
+     * Compare two versioning, the outcomes will be one of the following: <br>
      * -- clock1 is BEFORE clock 2, if there exists an nodeId such that
      * c1(nodeId) <= c2(nodeId) and there does not exist another nodeId such
      * that c1(nodeId) > c2(nodeId). <br>

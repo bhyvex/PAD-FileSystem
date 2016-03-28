@@ -1,4 +1,4 @@
-package com.dido.pad.consistenthashing;
+package com.dido.pad.hashing;
 
 import com.dido.pad.Node;
 import com.google.common.base.Preconditions;

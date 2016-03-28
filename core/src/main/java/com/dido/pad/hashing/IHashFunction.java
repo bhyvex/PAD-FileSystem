@@ -1,4 +1,4 @@
-package com.dido.pad.consistenthashing;
+package com.dido.pad.hashing;
 
 /**
  * Created by luca on 22/03/16.

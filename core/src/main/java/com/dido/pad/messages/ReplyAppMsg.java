@@ -1,4 +1,4 @@
-package com.dido.pad.datamessages;
+package com.dido.pad.messages;
 
 /**
  * Created by dido-ubuntu on 11/03/16.

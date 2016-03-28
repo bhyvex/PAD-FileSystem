@@ -1,13 +1,13 @@
-package com.dido.pad.cli;
+package com.dido.pad.cli.client;
 
 import com.dido.pad.Helper;
 import com.dido.pad.Node;
 import com.dido.pad.PersistentStorage;
-import com.dido.pad.consistenthashing.DefaultFunctions;
-import com.dido.pad.consistenthashing.Hasher;
+import com.dido.pad.hashing.DefaultFunctions;
+import com.dido.pad.hashing.Hasher;
 import com.dido.pad.data.StorageData;
 import com.dido.pad.data.Versioned;
-import com.dido.pad.datamessages.*;
+import com.dido.pad.messages.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;

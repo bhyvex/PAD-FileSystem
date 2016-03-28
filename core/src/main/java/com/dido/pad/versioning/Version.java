@@ -1,4 +1,4 @@
-package com.dido.pad.VectorClocks;
+package com.dido.pad.versioning;
 
 /**
  * Created by dido-ubuntu on 15/03/16.

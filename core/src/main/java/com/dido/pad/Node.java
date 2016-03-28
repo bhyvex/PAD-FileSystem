@@ -1,6 +1,6 @@
 package com.dido.pad;
 
-import com.dido.pad.datamessages.AppMsg;
+import com.dido.pad.messages.AppMsg;
 import com.google.code.gossip.*;
 import com.google.code.gossip.event.GossipState;
 import com.google.code.gossip.manager.GossipManager;

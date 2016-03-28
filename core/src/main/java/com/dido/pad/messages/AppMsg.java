@@ -1,4 +1,4 @@
-package com.dido.pad.datamessages;
+package com.dido.pad.messages;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;

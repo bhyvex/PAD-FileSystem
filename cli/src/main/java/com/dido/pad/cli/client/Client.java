@@ -1,8 +1,8 @@
-package com.dido.pad.cli;
+package com.dido.pad.cli.client;
 
 import com.dido.pad.Helper;
 import com.dido.pad.Node;
-import com.dido.pad.datamessages.*;
+import com.dido.pad.messages.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.google.code.gossip.GossipMember;
@@ -88,7 +88,7 @@ public class Client {
     }
 
     private void gossipClient() {
-        int interval = 50000; // millisencods
+        int interval = 8000; // millisencods
 
         try{
 
@@ -131,15 +131,12 @@ public class Client {
 
             Thread.sleep(interval);
 
-
         }
         } catch (InterruptedException | IOException e) {
             e.printStackTrace();
             clientSocket.close();
         }
         clientSocket.close();
-
-
     }
 
     private ArrayList<Node> _waitRepsonseNodes() {

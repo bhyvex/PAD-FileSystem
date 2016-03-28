@@ -1,4 +1,6 @@
-import com.dido.pad.VectorClocks.VectorClock;
+package com.dido.pad;
+
+import com.dido.pad.versioning.VectorClock;
 import com.dido.pad.data.StorageData;
 import com.dido.pad.data.Versioned;
 import org.junit.Assert;
@@ -7,7 +9,7 @@ import org.junit.Test;
 /**
  * Created by dido-ubuntu on 15/03/16.
  */
-public class TestVectorClocks {
+public class TestVersion {
 
     @Test
     public void testVectors() throws InterruptedException {

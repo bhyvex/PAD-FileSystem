@@ -1,4 +1,4 @@
-package com.dido.pad.consistenthashing;
+package com.dido.pad.hashing;
 
 /**
  * Created by dido-ubuntu on 08/03/16.

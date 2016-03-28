@@ -1,10 +1,4 @@
-package com.dido.pad.datamessages;
-
-import com.dido.pad.Node;
-import com.dido.pad.data.Versioned;
-import com.sun.javafx.scene.control.behavior.TabPaneBehavior;
-
-import java.util.ArrayList;
+package com.dido.pad.messages;
 
 /**
  * Created by dido-ubuntu on 26/03/16.

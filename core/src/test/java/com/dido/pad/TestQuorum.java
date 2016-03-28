@@ -1,11 +1,12 @@
-import com.dido.pad.Helper;
-import com.dido.pad.Node;
-import com.dido.pad.datamessages.AppMsg;
-import com.dido.pad.datamessages.RequestAppMsg;
+package com.dido.pad;
+
+import com.dido.pad.messages.AppMsg;
+import com.dido.pad.messages.RequestAppMsg;
 import com.google.code.gossip.GossipMember;
 import com.google.code.gossip.GossipSettings;
 import com.google.code.gossip.RemoteGossipMember;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -17,31 +18,33 @@ import java.util.List;
 
 public class TestQuorum {
 
+    GossipSettings settings = new GossipSettings();
+    List<GossipMember> startupMembers = new ArrayList<>();
+    List<Node> clients = new ArrayList<>();
+    int clusterMembers = 3;
 
 
-    public void testGetMerge(){
-        //startup gossip member
-        GossipSettings settings = new GossipSettings();
-        int seedNodes = 1;
-        List<GossipMember> startupMembers = new ArrayList<>();
-        for (int i = 1; i < seedNodes + 1; ++i) {
-            startupMembers.add(new RemoteGossipMember("127.0.0." + i, Helper.GOSSIP_PORT, "node" + i));
-        }
-
-        //create three local client
-        List<Node> clients = new ArrayList<>();
-        int clusterMembers = 3;
+    public TestQuorum(){
+        startupMembers.add(new RemoteGossipMember("127.0.0.1", Helper.GOSSIP_PORT, "node1"));
         for (int i = 1; i < clusterMembers + 1; ++i) {
             Node node = new Node("127.0.0." + i, "node" + i, Helper.STORAGE_PORT, Helper.GOSSIP_PORT, startupMembers, settings);
             clients.add(node);
         }
+    }
 
+    @Before
+    public void setUP(){
         for (Node n : clients) {
             n.start();
         }
+    }
+
+
+    @Test
+    public void testGetMerge(){
 
         try {
-            Thread.sleep(6000);
+            Thread.sleep(5000);
 
             //Check if the nodes discovered each other
             for (int i = 0; i < clusterMembers; ++i) {

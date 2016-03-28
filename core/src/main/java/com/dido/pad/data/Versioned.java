@@ -1,8 +1,8 @@
 package com.dido.pad.data;
 
 
-import com.dido.pad.VectorClocks.VectorClock;
-import com.dido.pad.VectorClocks.Version;
+import com.dido.pad.versioning.VectorClock;
+import com.dido.pad.versioning.Version;
 
 import java.io.Serializable;
 

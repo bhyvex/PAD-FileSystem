@@ -1,10 +1,10 @@
 package com.dido.pad;
 
-import com.dido.pad.consistenthashing.DefaultFunctions;
+import com.dido.pad.hashing.DefaultFunctions;
 import com.dido.pad.data.StorageData;
 import com.dido.pad.data.Versioned;
-import com.dido.pad.consistenthashing.Hasher;
-import com.dido.pad.datamessages.*;
+import com.dido.pad.hashing.Hasher;
+import com.dido.pad.messages.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -43,9 +42,7 @@ public class StorageService extends Thread {
 
     public StorageService(Node node){ // only for the creation of new node from a GossipMember
         this.myNode = node;
-
     }
-
 
     public StorageService(Node node, List<GossipMember> seedNodes) {
 
@@ -59,7 +56,7 @@ public class StorageService extends Thread {
         // ADD seed nodes to the node storage service
         for (GossipMember member : seedNodes) {
             Node n = new Node(member);
-            //TODO problem trasportin s GossipMember to a Node
+            //TODO problem tchange saGossipMember to a Node
           //  if (!cHasher.containsNode(n))
                 cHasher.addServer(n);
         }
@@ -125,7 +122,7 @@ public class StorageService extends Thread {
             try {
                 byte[] buff = new byte[udpServer.getReceiveBufferSize()];
                 DatagramPacket p = new DatagramPacket(buff, buff.length);
-                StorageService.LOGGER.debug(this.myNode.getIpAddress() + " - waiting messages...");
+                StorageService.LOGGER.debug(myNode.getIpAddress() + " - waiting messages...");
                 udpServer.receive(p);
 
                 int packet_length = 0;
@@ -174,7 +171,6 @@ public class StorageService extends Thread {
                     manageConflictMessage((RequestConflictMsg) msg);
                 }
 
-
             } catch (IOException e) {
                 StorageService.LOGGER.info(myNode.getIpAddress()+"- IOExcpetion "+e.getMessage());
                 keepRunning.set(false);
@@ -221,7 +217,7 @@ public class StorageService extends Thread {
     }
 
     private void manageSystemReply(ReplySystemMsg replyMsg) {
-        StorageService.LOGGER.info(this.myNode.getIpAddress() + " - Reply SystemMsg received from " + replyMsg.getIpSender());
+        StorageService.LOGGER.info(myNode.getIpAddress() + " - Reply SystemMsg received from " + replyMsg.getIpSender());
     }
 
 
@@ -234,7 +230,7 @@ public class StorageService extends Thread {
                 Versioned mergeData = new Versioned(vData.getData());
                 mergeData.mergeTo(vData);                   // merge VersionData received with my data
                 storage.put(mergeData);
-                StorageService.LOGGER.info(this.myNode.getIpAddress() + " - PUT SystemMsg <" + key + "> version: "+ mergeData.getVersion());
+                StorageService.LOGGER.info(myNode.getIpAddress() + " - PUT SystemMsg <" + key + "> version: "+ mergeData.getVersion());
                 send(msg.getIpSender(), Helper.QUORUM_PORT, new ReplySystemMsg(AppMsg.OP.OK, myNode.getIpAddress(), Helper.QUORUM_PORT, "PUT Succesfully "));
                 break;
             case GET:
@@ -258,10 +254,10 @@ public class StorageService extends Thread {
     private void manageAppReply(ReplyAppMsg msg) {
         switch (msg.getOperation()) {
             case OK:
-                StorageService.LOGGER.info(this.myNode.getIpAddress() + " - REPLY  OK " + msg.getMsg() + " from " + msg.getIpSender());
+                StorageService.LOGGER.info(myNode.getIpAddress() + " - REPLY  OK " + msg.getMsg() + " from " + msg.getIpSender());
                 break;
             case ERR:
-                StorageService.LOGGER.info(this.myNode.getIpAddress() + " - REPLY  ERR " + msg.getMsg());
+                StorageService.LOGGER.info(myNode.getIpAddress() + " - REPLY  ERR " + msg.getMsg());
                 break;
         }
     }
@@ -275,7 +271,7 @@ public class StorageService extends Thread {
     private void manageAppRequest(RequestAppMsg<?> msg) {
         switch (msg.getOperation()) {
             case PUT:
-                StorageService.LOGGER.info(this.myNode.getIpAddress() + " - Received  AppMsg " + msg.getOperation() + " <" + msg.getKey() + ":" + msg.getValue() + ">");// from " + msg.getIpSender());
+                StorageService.LOGGER.info(myNode.getIpAddress() + " - Received  AppMsg " + msg.getOperation() + " <" + msg.getKey() + ":" + msg.getValue() + ">");// from " + msg.getIpSender());
                 if (storage.containsKey(msg.getKey())) { // UPDATE data and increment version
                     Versioned d = storage.get(msg.getKey());
                     d.setData(new StorageData<>(msg.getKey(), msg.getValue()));
@@ -298,7 +294,7 @@ public class StorageService extends Thread {
                 break;
             case GET:
                 String key = msg.getKey();
-                StorageService.LOGGER.info(this.myNode.getIpAddress() + " - Received AppMsg " + msg.getOperation() + "<" + key + ">");
+                StorageService.LOGGER.info(myNode.getIpAddress() + " - Received AppMsg " + msg.getOperation() + "<" + key + ">");
                 if (storage.containsKey(key)) {
                     Versioned myData = storage.get(key);
                     List<ReplySystemMsg> replies = askQuorum(myData,Helper.QUORUM_PORT, AppMsg.OP.GET);
@@ -309,12 +305,12 @@ public class StorageService extends Thread {
                       //  for (ReplySystemMsg msgReply :replies) {  //suppose only one single versioned received
                             ReplySystemMsg reply =replies.get(0);
                             Versioned bkuData = reply.getData();
-                          StorageService.LOGGER.info(this.myNode.getIpAddress() + " - Received Versioned: <"+reply.getData().getData().getKey()+"> version: "+ reply.getData().getVersion()+" from "+reply.getIpSender());
+                          StorageService.LOGGER.info(myNode.getIpAddress() + " - Received Versioned: <"+reply.getData().getData().getKey()+"> version: "+ reply.getData().getVersion()+" from "+reply.getIpSender());
                             switch (bkuData.compareTo(myData)) {
                                 case BEFORE: //my data version is newer than the backup version
                                     send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " GET "+ myData.getData().toString()));
                                     for (Node backup: preferenceNodes){
-                                        backup.sendToStorage(new RequestSystemMsg(AppMsg.OP.PUT,myNode.getIpAddress(),Helper.STORAGE_PORT,myData));
+                                        backup.sendToStorage(new RequestSystemMsg(AppMsg.OP.PUT, myNode.getIpAddress(),Helper.STORAGE_PORT,myData));
                                     }
                                     break;
                                 case AFTER: //my data version is older than the backup version
