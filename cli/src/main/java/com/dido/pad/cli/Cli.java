@@ -109,7 +109,7 @@ public class Cli{
         ArrayList<GossipMember> st = new ArrayList<>();
 
         for(int i = 1 ; i <= NUM_NODES; i++)
-            st.add(new RemoteGossipMember("127.0.0."+i, Helper.GOSSIP_PORT, "node"+i));
+            st.add(new RemoteGossipMember("127.0.0."+i, CliHelper.GOSSIP_PORT, "node"+i));
 
         Client client = new Client(ip, id, st);
 

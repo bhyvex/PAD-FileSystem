@@ -3,6 +3,7 @@ package com.dido.pad.cli.client;
 import com.dido.pad.Helper;
 import com.dido.pad.Node;
 import com.dido.pad.cli.Cli;
+import com.dido.pad.cli.CliHelper;
 import com.dido.pad.messages.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
@@ -111,7 +112,7 @@ public class Client {
     }
 
     private void gossipClient() {
-        int interval = 4000; // millisencods
+        int interval = CliHelper.INTERVAL_DISCOVER;
 
         try{
 

@@ -42,7 +42,7 @@ public class ClientService extends Thread {
 
     private List<Node> preferenceNodes; // preference nodes = list of backup nodes (xclude the node itself)
                                         //list of nodes that is responsible for storing a particular key is
-   private Client client;
+    private Client client;
 
     private Cli cli;
 
@@ -167,7 +167,6 @@ public class ClientService extends Thread {
                 else if(msg instanceof RequestConflictMsg){
                     manageConflictMessage((RequestConflictMsg) msg);
                 }
-
 
             } catch (IOException e) {
                 LOGGER.info(client.getIpAddress()+"- error :"+e);
@@ -495,7 +494,7 @@ public class ClientService extends Thread {
 
         if(nexts.contains(nodeUp) && previous.contains(nodeUp)){
             for (Versioned vdata : storage.getStorage().values()) {
-                RequestSystemMsg msg = new RequestSystemMsg(AppMsg.OP.PUT, client.getIpAddress(), Helper.STORAGE_PORT, vdata);
+                RequestSystemMsg msg = new RequestSystemMsg(AppMsg.OP.PUT, client.getIpAddress(), CliHelper.STORAGE_PORT, vdata);
                 ClientService.LOGGER.info(this.client.getIpAddress() + " - UP node " + nodeUp.getIpAddress() + ", Sent data " + vdata.getData());
                 nodeUp.sendToStorage(msg);
             }

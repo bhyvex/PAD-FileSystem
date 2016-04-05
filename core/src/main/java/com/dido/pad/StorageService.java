@@ -144,35 +144,28 @@ public class StorageService extends Thread {
 
                 /* Request application message received */
                 if (msg instanceof RequestAppMsg<?>) {
-                    RequestAppMsg requestMsg = (RequestAppMsg) msg;
-                  //  Node destNode = this.cHasher.getServerForData(requestMsg.getKey());
-                   // if (destNode.equals(this.myNode)) { /*store in my database, I'm the master*/
-                        manageAppRequest(requestMsg);
-                  //  } else {                            /*forward message to another node*/
-                  //      destNode.sendToStorage(requestMsg);
-                 //       StorageService.LOGGER.info(this.myNode.getIpAddress() + " -forwards msg to " + destNode.getIpAddress());
-                  //  }
+                    manageAppRequest((RequestAppMsg) msg);
+                }
+                 /* Reply Application message received*/
+                else if (msg instanceof ReplyAppMsg) {
+                    ReplyAppMsg replyMsg = (ReplyAppMsg) msg;
+                    manageAppReply(replyMsg);
                 }
                 /* Request System  message received*/
                 else if (msg instanceof RequestSystemMsg) {
                     manageSystemRequest((RequestSystemMsg) msg);
                 }
-                /* Reply Application message received*/
-                else if (msg instanceof ReplyAppMsg) {
-                    ReplyAppMsg replyMsg = (ReplyAppMsg) msg;
-                    manageAppReply(replyMsg);
-                }
-                /* Reply System message received*/
-                else if (msg instanceof ReplySystemMsg) {
-                    ReplySystemMsg replyMsg = (ReplySystemMsg) msg;
-                    manageSystemReply(replyMsg);
-                }
                 /* Request Client message received*/
                 else if(msg instanceof RequestClientMsg){
                     manageClientRequest((RequestClientMsg) msg);
                 }
-                else if(msg instanceof ReplyConflictMsg){
+               /* else if(msg instanceof ReplyConflictMsg){
                     manageConflictMessage((ReplyConflictMsg) msg);
+                }*/
+                // Reply System message received
+                else if (msg instanceof ReplySystemMsg) {
+                    ReplySystemMsg replyMsg = (ReplySystemMsg) msg;
+                    manageSystemReply(replyMsg);
                 }
 
             } catch (IOException e) {
@@ -210,17 +203,19 @@ public class StorageService extends Thread {
 
 
     }
-    private void manageConflictMessage( ReplyConflictMsg msg) {
+ /*   private void manageConflictMessage( ReplyConflictMsg msg) {
         switch (msg.getType()) {
             case REPLY:
                 System.out.print("Selection from clinet "+msg.getSelection());
                 break;
         }
     }
-
+*/
     private void manageSystemReply(ReplySystemMsg replyMsg) {
         StorageService.LOGGER.info(myNode.getIpAddress() + " - Reply SystemMsg received from " + replyMsg.getIpSender());
     }
+
+
 
 
     private void manageSystemRequest(RequestSystemMsg msg) {
@@ -260,17 +255,6 @@ public class StorageService extends Thread {
         }
     }
 
-    private void manageAppReply(ReplyAppMsg msg) {
-        switch (msg.getOperation()) {
-            case OK:
-                StorageService.LOGGER.info(myNode.getIpAddress() + " - REPLY  OK " + msg.getMsg() + " from " + msg.getIpSender());
-                break;
-            case ERR:
-                StorageService.LOGGER.info(myNode.getIpAddress() + " - REPLY  ERR " + msg.getMsg());
-                break;
-        }
-    }
-
     /**
      * The coordinator of the request manages the  message sent by a client.
      *
@@ -297,7 +281,7 @@ public class StorageService extends Thread {
                     //sent to all WRITE_NODES the new object received and wait the selection
                     List<ReplySystemMsg> rep = askQuorum(vData, Helper.QUORUM_PORT, AppMsg.OP.PUT);
                     if(rep.size() < WRITE_NODES-1)
-                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.ERR, " Error: PUT has note received version from allthe backups"));
+                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.ERR, " Error: PUT has note received version from all Rethe backups"));
                     else
                         send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " PUT  <" + msg.getKey() + ":" + msg.getValue() + ">"));
                 }
@@ -327,6 +311,7 @@ public class StorageService extends Thread {
                                 case AFTER: //my data version is older than the backup version
                                     StorageService.LOGGER.info(myNode.getIpAddress() + " - AFTER version: <"+reply.getData().getData().getKey()+"> version: "+ reply.getData().getVersion()+" from "+reply.getIpSender());
                                     myData.mergeTo(bkuData);
+                                    // TODO: this is the cause of receiveing two messages GET
                                     send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " GET "+ bkuData.getData().toString()));
                                     break;
                                 case CONCURRENT: //concurrent version must be resolved by the client
@@ -337,26 +322,27 @@ public class StorageService extends Thread {
                                     int sel = waitConflictResponse(Helper.CONFLICT_LISTEN_PORT);
                                     StorageService.LOGGER.info(myNode.getIpAddress() + " - Received selection " + sel);
                                     switch (sel){
-                                        case(1): //my data version is selected from the client
+                                        case(1): //my data is chosen from the client
                                             for (Node backup: preferenceNodes){
                                                 backup.sendToStorage(new RequestSystemMsg(AppMsg.OP.PUT, myNode.getIpAddress(),Helper.STORAGE_PORT,myData));
                                             }
-                                        case(2): //backup data is selected from the client
-                                            sendToMyStorage(new RequestSystemMsg(AppMsg.OP.PUT, myNode.getIpAddress(),Helper.STORAGE_PORT,bkuData));
+                                            send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " GET "+ myData.getData().toString()));
+                                        case(2): {//backup  is chosen from the client
+                                            sendToMyStorage(new RequestSystemMsg(AppMsg.OP.PUT, myNode.getIpAddress(), Helper.STORAGE_PORT, bkuData));
+                                            send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " GET "+ bkuData.getData().toString()));
+                                        }
                                     }
+
+
                                     break;
                             }
-                      //  }
                     }
-
-                    //5) sent reconcilied version
-                    send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " GET "+ myData.getData().toString()));
                 }
                     else {
                     send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.ERR, " GET key not found"));
                 }
                 break;
-            case LIST: //list command from thec client
+            case LIST: //list command from client
                 if (!storage.isEmpty()) {
                     send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " LIST " + storage.toString()));
                 } else {
@@ -367,6 +353,16 @@ public class StorageService extends Thread {
         }
     }
 
+    private void manageAppReply(ReplyAppMsg msg) {
+        switch (msg.getOperation()) {
+            case OK:
+                StorageService.LOGGER.info(myNode.getIpAddress() + " - REPLY  OK  from " + msg.getIpSender() + msg.getMsg()  );
+                break;
+            case ERR:
+                StorageService.LOGGER.info(myNode.getIpAddress() + " - REPLY  ERR " + msg.getMsg());
+                break;
+        }
+    }
 
     public void sendToMyStorage(AppMsg msg) {
         /* send  message to the storage  node */
@@ -417,7 +413,7 @@ public class StorageService extends Thread {
 
         if (op.equals(AppMsg.OP.PUT))
             reqQuorum = new RequestSystemMsg(op, myNode.getIpAddress(), 0, vData);
-        else {
+        else { //GET message sends only the key
             reqQuorum = new RequestSystemMsg(op, myNode.getIpAddress(), 0, vData.getData().getKey());
         }
 
