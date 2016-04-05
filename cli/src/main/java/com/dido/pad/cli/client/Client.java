@@ -165,6 +165,8 @@ public class Client {
             byte[] buff = new byte[clientSocket.getReceiveBufferSize()];
             DatagramPacket p = new DatagramPacket(buff, buff.length);
 
+            clientSocket.setSoTimeout(CliHelper.TIMEOUT_INTERVAL);
+
             ClientService.LOGGER.debug(ip + " - Waiting  nodes in the system ...");
 
             clientSocket.receive(p);

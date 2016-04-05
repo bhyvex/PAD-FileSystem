@@ -246,11 +246,9 @@ public class StorageService extends Thread {
 
                 } else {
                     String info = myNode.getIpAddress() + " - Data is not present into my storage";
-                    RequestSystemMsg replyErr = new RequestSystemMsg(AppMsg.OP.ERR, msg.getIpSender(), Helper.STORAGE_PORT, info);
+                    ReplySystemMsg replyErr = new ReplySystemMsg(AppMsg.OP.ERR, msg.getIpSender(), Helper.STORAGE_PORT, info);
                     send(msg.getIpSender(), Helper.QUORUM_PORT, replyErr);
                 }
-                break;
-            case LIST:
                 break;
         }
     }
@@ -293,11 +291,11 @@ public class StorageService extends Thread {
                     Versioned myData = storage.get(key);
                     List<ReplySystemMsg> replies = askQuorum(myData,Helper.QUORUM_PORT, AppMsg.OP.GET);
                     //Merge version
-                    if(replies.isEmpty() && replies.size() < READ_NODES-1)
+                    if(replies.isEmpty() && replies.size() < READ_NODES-1 || (!replies.get(0).getMsg().isEmpty()))
                         send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.ERR, " Error: GET has note received version from all the backups"));
                     else{
                       //  for (ReplySystemMsg msgReply :replies) {  //suppose only one single versioned received
-                        ReplySystemMsg reply =replies.get(0);
+                        ReplySystemMsg reply = replies.get(0);
                         Versioned bkuData = reply.getData();
                         //StorageService.LOGGER.info(myNode.getIpAddress() + " - Received Versioned: <"+reply.getData().getData().getKey()+"> version: "+ reply.getData().getVersion()+" from "+reply.getIpSender());
                             switch (bkuData.compareTo(myData)) {
@@ -332,8 +330,6 @@ public class StorageService extends Thread {
                                             send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " GET "+ bkuData.getData().toString()));
                                         }
                                     }
-
-
                                     break;
                             }
                     }
@@ -345,8 +341,10 @@ public class StorageService extends Thread {
             case LIST: //list command from client
                 if (!storage.isEmpty()) {
                     send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " LIST " + storage.toString()));
+                    StorageService.LOGGER.info(myNode.getIpAddress() + " - Sent LIST of my database to " + msg.getIpSender());
                 } else {
                     send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.ERR, " LIST: empty database"));
+                    StorageService.LOGGER.info(myNode.getIpAddress() + " - LIST : my database is empty");
                 }
 
                 break;
