@@ -3,6 +3,7 @@ package com.dido.pad.cli.client;
 import com.dido.pad.Helper;
 import com.dido.pad.Node;
 import com.dido.pad.PersistentStorage;
+import com.dido.pad.cli.Cli;
 import com.dido.pad.hashing.DefaultFunctions;
 import com.dido.pad.hashing.Hasher;
 import com.dido.pad.data.StorageData;
@@ -14,7 +15,9 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.google.code.gossip.GossipMember;
 import org.apache.log4j.Logger;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -41,10 +44,12 @@ public class ClientService extends Thread {
                                         //list of nodes that is responsible for storing a particular key is
    private Client client;
 
+    private Cli cli;
+
 
    // public ClientService(Node client, List<GossipMember> seedNodes) {
-   public ClientService(Client client, List<GossipMember> seedNodes) {
-
+   public ClientService(Client client, List<GossipMember> seedNodes, Cli cli) {
+        this.cli = cli;
         this.cHasher = new Hasher<>(Helper.NUM_NODES_VIRTUALS, DefaultFunctions::SHA1, DefaultFunctions::BytesConverter);
         this.client = client;
         storage = new PersistentStorage();
@@ -158,14 +163,14 @@ public class ClientService extends Thread {
                     ReplySystemMsg replyMsg = (ReplySystemMsg) msg;
                     manageSystemReply(replyMsg);
                 }
-
+                /*request for conflict message resolution*/
                 else if(msg instanceof RequestConflictMsg){
                     manageConflictMessage((RequestConflictMsg) msg);
                 }
 
 
             } catch (IOException e) {
-               // StorageService.LOGGER.debug(client.getIpAddress()+"- has beeen shutdown ...");
+                LOGGER.info(client.getIpAddress()+"- error :"+e);
                 keepRunning.set(false);
             }
         }
@@ -173,14 +178,30 @@ public class ClientService extends Thread {
     }
 
 
-    private void manageConflictMessage( RequestConflictMsg msg) {
+    private void manageConflictMessage(RequestConflictMsg msg) {
         switch (msg.getType()) {
             case REQUEST:
-                System.out.println("CLIENT Insert a choice"+msg.getSelection());
+                System.out.println("CLIENT Insert a choice "+msg.getSelection());
+                int selection = readFromCli(msg);
+                ReplyConflictMsg msgRely = new ReplyConflictMsg(AppMsg.TYPE.REPLY, AppMsg.OP.OK, selection);
+                send(msg.getIpSender(), Helper.CONFLICT_LISTEN_PORT, msgRely);
+                System.out.println("SENT selection: " + selection+ " to: " + msg.getIpSender());//on port "+msg.getPortSender() );
                 break;
             case REPLY:
                 break;
         }
+    }
+
+    private int  readFromCli(RequestConflictMsg msg) {
+        int selection = -1;
+        try {
+            System.out.println("Client service: insert the rigth version");
+            selection = Integer.parseInt( Cli.scanString());
+           // System.out.println("inserted " + s);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return selection;
     }
 
     private void manageSystemReply(ReplySystemMsg replyMsg) {
@@ -249,7 +270,7 @@ public class ClientService extends Thread {
                     this.storage.put(vData);
                     ClientService.LOGGER.info(this.client.getIpAddress() + " - Inserted <" + msg.getKey() + ":" + msg.getValue() + "> into local database");
 
-                    //sent to all WRITE_NODES the new object received and wait the response
+                    //sent to all WRITE_NODES the new object received and wait the selection
                     List<ReplySystemMsg> rep = askQuorum(vData, Helper.QUORUM_PORT, AppMsg.OP.PUT);
                     if(rep.size() < WRITE_NODES-1)
                         send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.ERR, " Error: PUT has note received version from allthe backups"));
@@ -396,13 +417,13 @@ public class ClientService extends Thread {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        //wait quorum response
+        //wait quorum selection
         return _waitQuorum(reqQuorum.getOperation(), listenPort);
     }
 
     private List<ReplySystemMsg> _waitQuorum(AppMsg.OP op, int listenPort) {
 
-        DatagramSocket udpQuorum;  //server listen Quorum response
+        DatagramSocket udpQuorum;  //server listen Quorum selection
 
         //int numResponses = (op == AppMsg.OP.PUT) ? WRITE_NODES : READ_NODES;
         int numResponses = (op == AppMsg.OP.PUT) ? WRITE_NODES-1 : READ_NODES-1;
@@ -413,11 +434,11 @@ public class ClientService extends Thread {
             //TODO insert timeout into configuration file
             udpQuorum.setSoTimeout(3000);
 
-            //wait the response
+            //wait the selection
             for (int j = 0; j < numResponses; j++) {
                 byte[] buff = new byte[udpQuorum.getReceiveBufferSize()];
                 DatagramPacket p = new DatagramPacket(buff, buff.length);
-                ClientService.LOGGER.debug(this.client.getIpAddress() + " - Waiting " + numResponses + " quorum msg response...");
+                ClientService.LOGGER.debug(this.client.getIpAddress() + " - Waiting " + numResponses + " quorum msg selection...");
 
                 try {
                     udpQuorum.receive(p);

@@ -153,8 +153,6 @@ public class VectorClock  implements Version, Serializable {
 
     @Override
     public String toString() {
-        return "VectorClock{" +
-                "vectorClock=" + vectorClock +
-                '}';
+        return "VectorClock {" + vectorClock + '}';
     }
 }

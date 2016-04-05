@@ -12,6 +12,9 @@ public class RequestConflictMsg extends AppMsg {
         this.selection = msg;
 
     }
+    public RequestConflictMsg(){
+
+    }
 
     public String getSelection() {
         return selection;

@@ -2,6 +2,7 @@ package com.dido.pad.cli.client;
 
 import com.dido.pad.Helper;
 import com.dido.pad.Node;
+import com.dido.pad.cli.Cli;
 import com.dido.pad.messages.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
@@ -23,6 +24,7 @@ public class Client {
     public static final Logger LOGGER = Logger.getLogger(Client.class);
 
     private ClientService clientService;
+    private Cli cli;
 
     private final Thread _clientThread;   //send periodically a request of the node in the netwoks
     private DatagramSocket clientSocket ;
@@ -36,6 +38,7 @@ public class Client {
     public Client(String ip, String id, ArrayList<GossipMember> startupMember) {
         this.ip = ip;
         this.id = id;
+        cli = new Cli();
         try {
             clientSocket = new DatagramSocket(Helper.CLIENT_PORT);
         } catch (SocketException e1) {
@@ -43,7 +46,7 @@ public class Client {
             //e1.printStackTrace();
             clientSocket = null;
         }
-        clientService = new ClientService(this, startupMember);
+        clientService = new ClientService(this, startupMember, cli);
         keepRunning = new AtomicBoolean(true);
 
         _clientThread = new Thread(this::gossipClient);
@@ -51,6 +54,10 @@ public class Client {
         _clientThread.start();
 
         clientService.start();
+    }
+
+    public ClientService getClientService() {
+        return clientService;
     }
 
     public void addserver(Node n) {
@@ -78,6 +85,22 @@ public class Client {
         clientService.send(ip, Helper.STORAGE_PORT, msg);
     }
 
+    //only for update a value for testing the versioning without tear down a node
+    public void force(String key, String value, String ip) {
+        //Node n = null;
+        for (Node node:clientService.getcHasher().getAllNodes()) {
+            if (node.getIpAddress().equals(ip)){
+                RequestAppMsg msg = new RequestAppMsg<>(AppMsg.OP.PUT, key, value);
+                msg.setIpSender(ip);
+                node.sendToStorage(msg);
+                 LOGGER.info(ip + "- sent FORCE to " + node.getIpAddress());
+                return;
+        }
+        }
+        LOGGER.info(ip + "- FORCE  " + ip +" not found");
+
+    }
+
     public String getIpAddress() {
         return ip;
     }
@@ -88,11 +111,12 @@ public class Client {
     }
 
     private void gossipClient() {
-        int interval = 8000; // millisencods
+        int interval = 4000; // millisencods
 
         try{
 
         while (keepRunning.get()) {
+
             RequestClientMsg reqNodes = new RequestClientMsg(AppMsg.OP.DSCV, ip, Helper.CLIENT_PORT);
             Node node = clientService.getRandomNode();
 
@@ -120,14 +144,6 @@ public class Client {
             Client.LOGGER.debug(ip + "- Sent request nodes in the system to " + node.getIpAddress());
 
             ArrayList<Node> nodesDiscoverd =  _waitRepsonseNodes();
-
-/*
-            System.out.println("-------  Received NODES ----------");
-            for (Node n :
-                    nodesDiscoverd) {
-                System.out.print(n);
-            }
-*/
 
             Thread.sleep(interval);
 
@@ -165,7 +181,7 @@ public class Client {
             ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module());
             ReplyClientMsg msgNodes = mapper.readValue(receivedMessage, ReplyClientMsg.class);
             String nodesIds = msgNodes.getNodesIds();
-            ClientService.LOGGER.debug(ip + " - Received Nodes [" + nodesIds+ "]"+ msgNodes.getIpSender());
+            ClientService.LOGGER.debug(ip + " - Received Nodes [" + nodesIds+ "] from "+ msgNodes.getIpSender());
 
             String[] pairsNodeId = nodesIds.split("\\s");
             ArrayList<Node> nodesReceived = new ArrayList<>();
@@ -175,7 +191,7 @@ public class Client {
                 nodesReceived.add(n);
             }
             clientService.updateNodes(nodesReceived);
-            ClientService.LOGGER.info(ip + " - Nodes has been updated"  );
+            ClientService.LOGGER.debug(ip + " - Nodes has been updated"  );
 
 
         } catch (SocketException e) {
@@ -185,5 +201,6 @@ public class Client {
         }
         return nodes;
     }
+
 
 }

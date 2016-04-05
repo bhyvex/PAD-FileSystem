@@ -36,10 +36,7 @@ public class StorageData<T>  implements Serializable{
 
     @Override
     public String toString() {
-        return "StorageData {" +
-                "key='" + key + '\'' +
-                ", value=" + value +
-                '}';
+        return "StorageData <"+ key + ":" + value + '>';
     }
 
     @Override

@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
         @JsonSubTypes.Type(value = RequestSystemMsg.class, name = "reqCtrMsg"),
         @JsonSubTypes.Type(value = ReplySystemMsg.class, name = "repCtrMsg"),
         @JsonSubTypes.Type(value = RequestConflictMsg.class, name = "conflictMsg"),
+        @JsonSubTypes.Type(value = ReplyConflictMsg.class, name = "replyconflictMsg"),
         @JsonSubTypes.Type(value = RequestClientMsg.class, name = "reqClient"),
         @JsonSubTypes.Type(value = ReplyClientMsg.class, name = "replyClient")
 }

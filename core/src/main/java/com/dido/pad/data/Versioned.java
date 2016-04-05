@@ -60,7 +60,7 @@ public class Versioned  implements Serializable{
 
     @Override
     public String toString() {
-        return "Versioned{" +
+        return "Versioned {" +
                 "data=" + data +
                 ", version=" + version +
                 '}';

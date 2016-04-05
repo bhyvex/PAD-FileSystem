@@ -69,7 +69,6 @@ public class PersistentStorage {
     }
 
 
-
     public boolean isEmpty(){
         return _treeMap.isEmpty();
     }
@@ -90,19 +89,22 @@ public class PersistentStorage {
             return true;
         }
         return false;
-        //database.put(v.getData().getKey(),v);
     }
 
     @Override
     public String toString() {
+        //_treeMap= _db.getHashMap("storage");
         StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("\n");
         for (String key : _treeMap.keySet()) {
             if (stringBuilder.length() > 0) {
                 stringBuilder.append(" ");
             }
             String keyValue = _treeMap.get(key).getData().toString();
             stringBuilder.append(keyValue);
-
+            stringBuilder.append(" ");
+            stringBuilder.append(_treeMap.get(key).getVersion().toString());
+            stringBuilder.append("\n");
         }
         return stringBuilder.toString();
     }

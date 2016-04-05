@@ -32,7 +32,7 @@ public class TestQuorum {
         }
     }
 
-    @Before
+  //  @Before
     public void setUP(){
         for (Node n : clients) {
             n.start();
@@ -40,7 +40,7 @@ public class TestQuorum {
     }
 
 
-    @Test
+ //   @Test
     public void testGetMerge(){
 
         try {

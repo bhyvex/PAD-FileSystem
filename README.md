@@ -23,4 +23,4 @@ Go inside *app* folder
 
 In order to run the Client command line.
 
-`java -cp target/cli-1.0-SNAPSHOT-jar-with-dependencies.jar  com.dido.com.pad.cli.Cli `
+`java -cp target/cli-1.0-SNAPSHOT-jar-with-dependencies.jar  com.dido.pad.cli.Cli `

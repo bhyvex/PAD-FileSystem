@@ -36,8 +36,11 @@ public class AppRunner {
         int clusterMembers = 3;
         for (int i = 1; i < clusterMembers + 1; ++i) {
             String ip = "127.0.0." + i;
-            Node node = new Node(ip, "node" + i, Helper.STORAGE_PORT, Helper.GOSSIP_PORT, startupMembers, settings);
-            clients.put(ip, node);
+            //if(i!=3){
+                Node node = new Node(ip, "node" + i, Helper.STORAGE_PORT, Helper.GOSSIP_PORT, startupMembers, settings);
+                clients.put(ip, node);
+            //}
+
         }
 
         for (Node n : clients.values()) {
