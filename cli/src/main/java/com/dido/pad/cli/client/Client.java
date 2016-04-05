@@ -184,7 +184,7 @@ public class Client {
             ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module());
             ReplyClientMsg msgNodes = mapper.readValue(receivedMessage, ReplyClientMsg.class);
             String nodesIds = msgNodes.getNodesIds();
-            ClientService.LOGGER.debug(ip + " - Received Nodes [" + nodesIds+ "] from "+ msgNodes.getIpSender());
+            ClientService.LOGGER.debug(ip + " - Received Nodes [" + nodesIds + "] from " + msgNodes.getIpSender());
 
             String[] pairsNodeId = nodesIds.split("\\s");
             ArrayList<Node> nodesReceived = new ArrayList<>();
@@ -194,14 +194,17 @@ public class Client {
                 nodesReceived.add(n);
             }
             clientService.updateNodes(nodesReceived);
-            ClientService.LOGGER.debug(ip + " - Nodes has been updated"  );
+            ClientService.LOGGER.debug(ip + " - Nodes has been updated");
 
 
+        }catch (SocketTimeoutException e){
+            ClientService.LOGGER.info(ip + " - " + e);
         } catch (SocketException e) {
-            ClientService.LOGGER.error(ip + " - " + e);
+            ClientService.LOGGER.info(ip + " - " + e);
         } catch (IOException e) {
             e.printStackTrace();
         }
+
         return nodes;
     }
 

@@ -13,9 +13,9 @@ public class Helper {
     public static final int GOSSIP_PORT = 2000;
 
 
-    public static final int NUM_NODES_VIRTUALS = 1;  //number of nodes + virtulas nodes, (1 means onlyl physical node)
+    public static final int NUM_NODES_VIRTUALS = 3;  //number of nodes + virtulas nodes, (1 means onlyl physical node)
 
 
-    public static final boolean CLEAR_DATABASE_INTO_NODE = false;
+    public static final boolean CLEAR_DATABASE_INTO_NODE = true;
 
 }

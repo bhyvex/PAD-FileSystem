@@ -51,7 +51,6 @@ public class StorageService extends Thread {
         this.cHasher = new Hasher<>(Helper.NUM_NODES_VIRTUALS, DefaultFunctions::SHA1, DefaultFunctions::BytesConverter);
         this.myNode = node;
 
-
        // storage = new PersistentStorage(myNode.getId());
         storage = new PersistentStorage(myNode.getId(),Helper.CLEAR_DATABASE_INTO_NODE);
 
@@ -291,9 +290,10 @@ public class StorageService extends Thread {
                     Versioned myData = storage.get(key);
                     List<ReplySystemMsg> replies = askQuorum(myData,Helper.QUORUM_PORT, AppMsg.OP.GET);
                     //Merge version
-                    if(replies.isEmpty() && replies.size() < READ_NODES-1 || (!replies.get(0).getMsg().isEmpty()))
+                    //|| (replies.get(0).getMsg()==null)
+                    if(replies.isEmpty() && replies.size() < READ_NODES-1)
                         send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.ERR, " Error: GET has note received version from all the backups"));
-                    else{
+                    else if(!(replies.get(0).getOperation().equals(AppMsg.OP.ERR))){
                       //  for (ReplySystemMsg msgReply :replies) {  //suppose only one single versioned received
                         ReplySystemMsg reply = replies.get(0);
                         Versioned bkuData = reply.getData();

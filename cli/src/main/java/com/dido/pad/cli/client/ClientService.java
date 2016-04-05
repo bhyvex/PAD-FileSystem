@@ -40,7 +40,7 @@ public class ClientService extends Thread {
     private DatagramSocket udpServer;
     private AtomicBoolean keepRunning;
 
-    private List<Node> preferenceNodes; // preference nodes = list of backup nodes (xclude the node itself)
+   // private List<Node> preferenceNodes; // preference nodes = list of backup nodes (xclude the node itself)
                                         //list of nodes that is responsible for storing a particular key is
     private Client client;
 
@@ -52,7 +52,7 @@ public class ClientService extends Thread {
         this.cli = cli;
         this.cHasher = new Hasher<>(Helper.NUM_NODES_VIRTUALS, DefaultFunctions::SHA1, DefaultFunctions::BytesConverter);
         this.client = client;
-        storage = new PersistentStorage();
+        //storage = new PersistentStorage();
 
         // ADD seed nodes to the node storage service
         for (GossipMember member : seedNodes) {
@@ -138,31 +138,26 @@ public class ClientService extends Thread {
                 ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module());
                 AppMsg msg = mapper.readValue(receivedMessage, AppMsg.class);
 
-                /* Request application message received */
+                /* Request application message received
                 if (msg instanceof RequestAppMsg<?>) {
                     RequestAppMsg requestMsg = (RequestAppMsg) msg;
-                  //  Node destNode = this.cHasher.getServerForData(requestMsg.getKey());
-                   // if (destNode.equals(this.client)) { /*store in my database, I'm the master*/
                         manageAppRequest(requestMsg);
-                  //  } else {                            /*forward message to another node*/
-                  //      destNode.sendToStorage(requestMsg);
-                 //       StorageService.LOGGER.info(this.client.getIpAddress() + " -forwards msg to " + destNode.getIpAddress());
-                  //  }
-                }
-                /* Request System  message received*/
+
+                }*/
+                /* Request System  message received
                 else if (msg instanceof RequestSystemMsg) {
                     manageSystemRequest((RequestSystemMsg) msg);
-                }
+                }*/
                 /* Reply Application message received*/
-                else if (msg instanceof ReplyAppMsg) {
+                 if (msg instanceof ReplyAppMsg) {
                     ReplyAppMsg replyMsg = (ReplyAppMsg) msg;
                     manageAppReply(replyMsg);
                 }
-                /* Reply System message received*/
+                /* Reply System message received
                 else if (msg instanceof ReplySystemMsg) {
                     ReplySystemMsg replyMsg = (ReplySystemMsg) msg;
                     manageSystemReply(replyMsg);
-                }
+                }*/
                 /*request for conflict message resolution*/
                 else if(msg instanceof RequestConflictMsg){
                     manageConflictMessage((RequestConflictMsg) msg);
@@ -209,7 +204,6 @@ public class ClientService extends Thread {
 
 
     private void manageSystemRequest(RequestSystemMsg msg) {
-
         switch (msg.getOperation()) {
             case PUT:
                 Versioned vData = msg.getVersionedData();
@@ -252,7 +246,7 @@ public class ClientService extends Thread {
      *
      * @param msg
      */
-
+/*
     private void manageAppRequest(RequestAppMsg<?> msg) {
         switch (msg.getOperation()) {
             case PUT:
@@ -331,9 +325,10 @@ public class ClientService extends Thread {
     }
 
     public void sendToMyStorage(AppMsg msg) {
-        /* send  message to the storage  node */
+        / send  message to the storage  node
         this.send(client.getIpAddress(), Helper.STORAGE_PORT, msg);
     }
+    */
 
     protected void send(String destIp, int destPort, AppMsg msg) {
         try {
@@ -373,7 +368,7 @@ public class ClientService extends Thread {
 
     }
 
-
+/*
     public List<ReplySystemMsg> askQuorum(Versioned vData, int listenPort, AppMsg.OP op) {
         RequestSystemMsg reqQuorum;
 
@@ -475,7 +470,7 @@ public class ClientService extends Thread {
 
         return replies;
     }
-
+*/
     public void shutdown() {
         LOGGER.info(this.client.getIpAddress() + "-  Storage service has been shutdown...");
         udpServer.close();

@@ -33,7 +33,7 @@ public class AppRunner {
         //create three local client
         //List<Node> clients = new ArrayList<>();
         HashMap<String,Node> clients = new HashMap<>();
-        int clusterMembers = 3;
+        int clusterMembers = 4;
         for (int i = 1; i < clusterMembers + 1; ++i) {
             String ip = "127.0.0." + i;
             //if(i!=3){
