@@ -2,8 +2,8 @@ package com.dido.pad.cli.client;
 
 import com.dido.pad.Helper;
 import com.dido.pad.Node;
-import com.dido.pad.cli.Cli;
-import com.dido.pad.cli.CliHelper;
+import com.dido.pad.cli.MainClient;
+import com.dido.pad.cli.ClientHelper;
 import com.dido.pad.messages.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
@@ -12,8 +12,8 @@ import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.net.*;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -25,9 +25,9 @@ public class Client {
     public static final Logger LOGGER = Logger.getLogger(Client.class);
 
     private ClientService clientService;
-    private Cli cli;
+    private MainClient cli;
 
-    private final Thread _clientThread;   //send periodically a request of the node in the netwoks
+    private final Thread _clientThread;   //send periodically a request of the node in the system
     private DatagramSocket clientSocket ;
 
     private AtomicBoolean keepRunning;
@@ -39,22 +39,23 @@ public class Client {
     public Client(String ip, String id, ArrayList<GossipMember> startupMember) {
         this.ip = ip;
         this.id = id;
-        cli = new Cli();
+        cli = new MainClient();
         try {
             clientSocket = new DatagramSocket(Helper.CLIENT_PORT);
         } catch (SocketException e1) {
             Client.LOGGER.info(ip+ "- Error init "+ e1.getMessage());
-            //e1.printStackTrace();
             clientSocket = null;
         }
-        clientService = new ClientService(this, startupMember, cli);
+        clientService = new ClientService(this, startupMember);
         keepRunning = new AtomicBoolean(true);
-
         _clientThread = new Thread(this::gossipClient);
-        //TODO create a method fro staritng the service
-        _clientThread.start();
 
-        clientService.start();
+    }
+
+    public void start(){
+        _clientThread.start();
+        clientService.runCli();
+
     }
 
     public ClientService getClientService() {
@@ -63,43 +64,6 @@ public class Client {
 
     public void addserver(Node n) {
         clientService.getcHasher().addServer(n);
-    }
-
-    public void put(String key, String value) {
-        Node n = clientService.getcHasher().getServerForData(key);
-        RequestAppMsg msg = new RequestAppMsg<>(AppMsg.OP.PUT, key, value);
-        msg.setIpSender(ip);
-        n.sendToStorage(msg);
-        LOGGER.info(ip + "- sent Put to " + n.getIpAddress());
-    }
-
-    public void get(String key) {
-        Node n = clientService.getcHasher().getServerForData(key);
-        RequestAppMsg msg = new RequestAppMsg<>(AppMsg.OP.GET, key, "");
-        msg.setIpSender(ip);
-        n.sendToStorage(msg);
-        LOGGER.info(ip + "- sent GET to " + n.getIpAddress());
-    }
-
-    public void list(String ip) {
-        RequestAppMsg msg = new RequestAppMsg<>(AppMsg.OP.LIST, "", "");
-        clientService.send(ip, Helper.STORAGE_PORT, msg);
-    }
-
-    //only for update a value for testing the versioning without tear down a node
-    public void force(String key, String value, String ip) {
-        //Node n = null;
-        for (Node node:clientService.getcHasher().getAllNodes()) {
-            if (node.getIpAddress().equals(ip)){
-                RequestAppMsg msg = new RequestAppMsg<>(AppMsg.OP.PUT, key, value);
-                msg.setIpSender(ip);
-                node.sendToStorage(msg);
-                 LOGGER.info(ip + "- sent FORCE to " + node.getIpAddress());
-                return;
-        }
-        }
-        LOGGER.info(ip + "- FORCE  " + ip +" not found");
-
     }
 
     public String getIpAddress() {
@@ -112,62 +76,46 @@ public class Client {
     }
 
     private void gossipClient() {
-        int interval = CliHelper.INTERVAL_DISCOVER;
-
-        try{
+        int interval = ClientHelper.INTERVAL_DISCOVER;
 
         while (keepRunning.get()) {
+            try{
+                RequestClientMsg reqNodes = new RequestClientMsg(AppMsg.OP.DSCV, ip, Helper.CLIENT_PORT);
+                Node node = clientService.getRandomNode();
+                byte buf[] = Helper.fromClientMsgtoByte(reqNodes);
+                InetAddress destAddress = InetAddress.getByName(node.getIpAddress());
+                DatagramPacket packet = new DatagramPacket(buf, buf.length, destAddress, Helper.STORAGE_PORT);
+                clientSocket.send(packet);
 
-            RequestClientMsg reqNodes = new RequestClientMsg(AppMsg.OP.DSCV, ip, Helper.CLIENT_PORT);
-            Node node = clientService.getRandomNode();
+                LOGGER.debug(ip + " - Sent request nodes in the system to " + node.getIpAddress());
 
-            ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module());
-            byte[] jsonByte = mapper.writeValueAsBytes(reqNodes);
+                ArrayList<Node> received =  _waitRepsonseNodes();
+                clientService.updateNodes(received);
 
-            int packet_length = jsonByte.length;
-            // Convert the packet length to the byte representation of the int.
-            byte[] length_bytes = new byte[4];
-            length_bytes[0] = (byte) (packet_length >> 24);
-            length_bytes[1] = (byte) ((packet_length << 8) >> 24);
-            length_bytes[2] = (byte) ((packet_length << 16) >> 24);
-            length_bytes[3] = (byte) ((packet_length << 24) >> 24);
+                LOGGER.debug(ip + " - Nodes has been updated");
 
-            ByteBuffer byteBuffer = ByteBuffer.allocate(4 + jsonByte.length);
-            byteBuffer.put(length_bytes);
-            byteBuffer.put(jsonByte);
-            byte[] buf = byteBuffer.array();
+                Thread.sleep(interval);
 
-            InetAddress destAddress = InetAddress.getByName(node.getIpAddress());
-            DatagramPacket packet = new DatagramPacket(buf, buf.length, destAddress, Helper.STORAGE_PORT);
+            } catch (InterruptedException | IOException e) {
+                    e.printStackTrace();
+                    //clientSocket.close();
+            }
 
-            clientSocket.send(packet);
-
-            Client.LOGGER.debug(ip + "- Sent request nodes in the system to " + node.getIpAddress());
-
-            ArrayList<Node> nodesDiscoverd =  _waitRepsonseNodes();
-
-            Thread.sleep(interval);
-
-        }
-        } catch (InterruptedException | IOException e) {
-            e.printStackTrace();
-            clientSocket.close();
         }
         clientSocket.close();
     }
 
     private ArrayList<Node> _waitRepsonseNodes() {
-
-        ArrayList<Node> nodes = new ArrayList<>();
+        ArrayList<Node> nodesReceived = new ArrayList<>();
 
         try {
 
             byte[] buff = new byte[clientSocket.getReceiveBufferSize()];
             DatagramPacket p = new DatagramPacket(buff, buff.length);
 
-            clientSocket.setSoTimeout(CliHelper.TIMEOUT_INTERVAL);
+            clientSocket.setSoTimeout(ClientHelper.TIMEOUT_INTERVAL);
 
-            ClientService.LOGGER.debug(ip + " - Waiting  nodes in the system ...");
+            ClientService.LOGGER.debug(ip + " - Waiting list of nodes in the system ...");
 
             clientSocket.receive(p);
 
@@ -187,25 +135,19 @@ public class Client {
             ClientService.LOGGER.debug(ip + " - Received Nodes [" + nodesIds + "] from " + msgNodes.getIpSender());
 
             String[] pairsNodeId = nodesIds.split("\\s");
-            ArrayList<Node> nodesReceived = new ArrayList<>();
+
             for (String pair : pairsNodeId) {
                 String[] ipId = pair.split(":");   // IP:ID
                 Node n = new Node(ipId[0], ipId[1]);
                 nodesReceived.add(n);
             }
-            clientService.updateNodes(nodesReceived);
-            ClientService.LOGGER.debug(ip + " - Nodes has been updated");
 
-
-        }catch (SocketTimeoutException e){
-            ClientService.LOGGER.info(ip + " - " + e);
-        } catch (SocketException e) {
+        } catch (SocketTimeoutException | SocketException e) {
             ClientService.LOGGER.info(ip + " - " + e);
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        return nodes;
+        return nodesReceived;
     }
 
 

@@ -66,9 +66,10 @@ public class AppRunner {
                             clients.get(ip).shutdown();
                         break;
                     case ("up"):
-                        String ipAddress = cmds[1];
-                        if(clients.containsKey(ipAddress))
-                            clients.get(ipAddress).start();
+                        String lastAddress = cmds[1]; // is the last number of ip  (127.0.0.X)
+                        Node node = new Node("127.0.0."+lastAddress, "node" + lastAddress, Helper.STORAGE_PORT, Helper.GOSSIP_PORT, startupMembers, settings);
+                        clients.put("127.0.0."+lastAddress,node);
+                        node.start();
                         break;
                     case ("list"):
                         //c.list(cmds[1]);

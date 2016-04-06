@@ -2,31 +2,27 @@ package com.dido.pad.cli.client;
 
 import com.dido.pad.Helper;
 import com.dido.pad.Node;
-import com.dido.pad.PersistentStorage;
-import com.dido.pad.cli.Cli;
+import com.dido.pad.cli.MainClient;
 import com.dido.pad.hashing.DefaultFunctions;
 import com.dido.pad.hashing.Hasher;
-import com.dido.pad.data.StorageData;
-import com.dido.pad.data.Versioned;
 import com.dido.pad.messages.*;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.google.code.gossip.GossipMember;
 import org.apache.log4j.Logger;
+import org.omg.CosNaming.NamingContextPackage.NotFound;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.*;
-import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by dido-ubuntu on 07/03/16.
  */
-public class ClientService extends Thread {
+public class ClientService{//} extends Thread {
 
 
     public static final Logger LOGGER = Logger.getLogger(ClientService.class);
@@ -36,28 +32,25 @@ public class ClientService extends Thread {
     public int READ_NODES = 2;
 
     private Hasher<Node> cHasher;
-    private PersistentStorage storage;
+
     private DatagramSocket udpServer;
     private AtomicBoolean keepRunning;
 
-   // private List<Node> preferenceNodes; // preference nodes = list of backup nodes (xclude the node itself)
-                                        //list of nodes that is responsible for storing a particular key is
     private Client client;
 
-    private Cli cli;
+    BufferedReader bufferReader;
 
+   public ClientService(Client client, List<GossipMember> seedNodes) {
 
-   // public ClientService(Node client, List<GossipMember> seedNodes) {
-   public ClientService(Client client, List<GossipMember> seedNodes, Cli cli) {
-        this.cli = cli;
+        bufferReader = new BufferedReader(new InputStreamReader(System.in));
+
         this.cHasher = new Hasher<>(Helper.NUM_NODES_VIRTUALS, DefaultFunctions::SHA1, DefaultFunctions::BytesConverter);
         this.client = client;
-        //storage = new PersistentStorage();
 
         // ADD seed nodes to the node storage service
         for (GossipMember member : seedNodes) {
             Node n = new Node(member);
-            //TODO problem trasportin s GossipMember to a Node
+            //TODO problem trasform a GossipMember to a Node
           //  if (!cHasher.containsNode(n))
                 cHasher.addServer(n);
         }
@@ -65,27 +58,21 @@ public class ClientService extends Thread {
         keepRunning = new AtomicBoolean(true);
         try {
             SocketAddress sAddress = new InetSocketAddress(client.getIpAddress(), Helper.STORAGE_PORT);
-            ClientService.LOGGER.info(client.getIpAddress() + "- initialized on portStorage " + Helper.STORAGE_PORT);
-            ClientService.LOGGER.debug("I'm " + client.toString());
+            LOGGER.info(client.getIpAddress() + "- initialized on portStorage " + Helper.STORAGE_PORT);
             udpServer = new DatagramSocket(sAddress);
         } catch (SocketException e) {
-            ClientService.LOGGER.error(this.client.getIpAddress() + " - " + e);
+            LOGGER.error(this.client.getIpAddress() + " - at init-" + e);
             keepRunning.set(false);
             udpServer = null;
         }
 
     }
 
-    public List<Node> getReplicasNodes(Node server, int replicas) {
-        return cHasher.getNextServers(server, replicas);
-    }
-
-    public PersistentStorage getStorage() {
-        return storage;
+    public void removeServer(Node n) {
+        cHasher.removeServer(n);
     }
 
 
-    @JsonIgnore
     public Hasher<Node> getcHasher() {
         return cHasher;
     }
@@ -108,85 +95,214 @@ public class ClientService extends Thread {
             if(!nodes.contains(myNode))
                 cHasher.removeServer(myNode);
         }
-
     }
 
-    public void removeServer(Node n) {
-        cHasher.removeServer(n);
-    }
+    public void runCli() {
+        String help = " usage:\n " +
+                "\t put key value   : put the <key:value> into the system \n"  +
+                "\t get key         : retrieve the value associated to te key \n"+
+                "\t list ipAddress  : lists the pairs <key:value> into the database of ipAddress \n"+
+                "\t force key value ip : snd to the specidifc ip the key value \n"+
+                "\t nodes           : shows the nodes active inthe system \n";
 
+        System.out.print("\nInsert a command (h for usage message)");
+        while(true){
 
-    @Override
-    public void run() {
-        while (keepRunning.get()) {
+            System.out.print("\n>> ");
+            String input = null;
             try {
-                byte[] buff = new byte[udpServer.getReceiveBufferSize()];
-                DatagramPacket p = new DatagramPacket(buff, buff.length);
-                ClientService.LOGGER.debug(client.getIpAddress() + " - waiting messages...");
-                udpServer.receive(p);
-
-                int packet_length = 0;
-                for (int i = 0; i < 4; i++) {
-                    int shift = (4 - 1 - i) * 8;
-                    packet_length += (buff[i] & 0x000000FF) << shift;
-                }
-
-                byte[] json_bytes = new byte[packet_length];
-                System.arraycopy(buff, 4, json_bytes, 0, packet_length);
-                String receivedMessage = new String(json_bytes);
-
-                ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module());
-                AppMsg msg = mapper.readValue(receivedMessage, AppMsg.class);
-
-                /* Request application message received
-                if (msg instanceof RequestAppMsg<?>) {
-                    RequestAppMsg requestMsg = (RequestAppMsg) msg;
-                        manageAppRequest(requestMsg);
-
-                }*/
-                /* Request System  message received
-                else if (msg instanceof RequestSystemMsg) {
-                    manageSystemRequest((RequestSystemMsg) msg);
-                }*/
-                /* Reply Application message received*/
-                 if (msg instanceof ReplyAppMsg) {
-                    ReplyAppMsg replyMsg = (ReplyAppMsg) msg;
-                    manageAppReply(replyMsg);
-                }
-                /* Reply System message received
-                else if (msg instanceof ReplySystemMsg) {
-                    ReplySystemMsg replyMsg = (ReplySystemMsg) msg;
-                    manageSystemReply(replyMsg);
-                }*/
-                /*request for conflict message resolution*/
-                else if(msg instanceof RequestConflictMsg){
-                    manageConflictMessage((RequestConflictMsg) msg);
-                }
-
+                input = bufferReader.readLine();
             } catch (IOException e) {
-                LOGGER.info(client.getIpAddress()+"- error :"+e);
-                keepRunning.set(false);
+                e.printStackTrace();
+            }
+
+            String[] cmds = input.split("\\s+"); //splits  white spaces
+
+            switch (cmds[0]) {
+                case ("get"):
+                    String key = cmds[1];
+                    sendGetAndWait(key);
+                    break;
+                case ("put"):
+                    String k = cmds[1];
+                    String v = cmds[2];
+                    sendPutAndWait(k,v);
+                    break;
+                case ("list"):
+                    String ip = cmds[1];
+                    sendListAndWait(ip);
+                    break;
+                case ("nodes"):
+                    System.out.print(getcHasher().getAllNodes());
+                    break;
+                case ("force"):
+                    String kk = cmds[1];
+                    String vv = cmds[2];
+                    String Ip = cmds[3];
+                    sendForce(kk, vv, Ip);;
+                    break;
+                case ("h"):
+                    System.out.print(help);
+                    break;
+
             }
         }
-       shutdown();
+    }
+
+    private void sendForce(String kk, String vv, String ip) {
+
+        for (Node node:getcHasher().getAllNodes()) {
+            if (node.getIpAddress().equals(ip)) {
+                RequestAppMsg msg = new RequestAppMsg<>(AppMsg.OP.PUT, kk, vv);
+                msg.setIpSender(ip);
+                node.sendToStorage(msg);
+                LOGGER.info(ip + "- sent FORCE to " + node.getIpAddress());
+                return;
+            }
+        }
+    }
+
+    private void sendListAndWait(String ip) {
+        RequestAppMsg msg = new RequestAppMsg<>(AppMsg.OP.LIST, "", "");
+        msg.setIpSender(client.getIpAddress());
+
+        try {
+            InetAddress address = InetAddress.getByName(ip);
+
+            byte[] buf = Helper.fromAppMsgtoByte(msg);
+            DatagramPacket packet = new DatagramPacket(buf, buf.length, address, Helper.STORAGE_PORT);
+            udpServer.send(packet);
+            LOGGER.debug(client.getIpAddress() + "- Sent LIST to: " +ip);
+
+            byte[] buff = new byte[udpServer.getReceiveBufferSize()];
+            DatagramPacket p = new DatagramPacket(buff, buff.length);
+            udpServer.receive(p);
+
+            int packet_length = 0;
+            for (int i = 0; i < 4; i++) {
+                int shift = (4 - 1 - i) * 8;
+                packet_length += (buff[i] & 0x000000FF) << shift;
+            }
+
+            byte[] json_bytes = new byte[packet_length];
+            System.arraycopy(buff, 4, json_bytes, 0, packet_length);
+            String receivedMessage = new String(json_bytes);
+
+            ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module());
+            ReplyAppMsg msgReceived = mapper.readValue(receivedMessage, ReplyAppMsg.class);
+            manageAppReply(msgReceived);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void sendPutAndWait(String key, String value) {
+        Node n = getcHasher().getServerForData(key);
+        String ip = n.getIpAddress();
+        RequestAppMsg msg = new RequestAppMsg<>(AppMsg.OP.PUT, key, value);
+        msg.setIpSender(client.getIpAddress());
+
+        try {
+            InetAddress address = InetAddress.getByName(ip);
+
+            byte[] buf = Helper.fromAppMsgtoByte(msg);
+            DatagramPacket packet = new DatagramPacket(buf, buf.length, address, Helper.STORAGE_PORT);
+            udpServer.send(packet);
+            LOGGER.debug(client.getIpAddress() + "- Sent PUT to: " + n.getIpAddress());
+
+            byte[] buff = new byte[udpServer.getReceiveBufferSize()];
+            DatagramPacket p = new DatagramPacket(buff, buff.length);
+            LOGGER.debug(client.getIpAddress() + " - waiting PUT response...");
+            udpServer.receive(p);
+
+            int packet_length = 0;
+            for (int i = 0; i < 4; i++) {
+                int shift = (4 - 1 - i) * 8;
+                packet_length += (buff[i] & 0x000000FF) << shift;
+            }
+
+            byte[] json_bytes = new byte[packet_length];
+            System.arraycopy(buff, 4, json_bytes, 0, packet_length);
+            String receivedMessage = new String(json_bytes);
+
+            ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module());
+            ReplyAppMsg msgReceived = mapper.readValue(receivedMessage, ReplyAppMsg.class);
+            manageAppReply(msgReceived);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private void sendGetAndWait(String key)  {
+        Node n = getcHasher().getServerForData(key);
+        String ip = n.getIpAddress();
+        RequestAppMsg msg = new RequestAppMsg<>(AppMsg.OP.GET, key, "");
+        msg.setIpSender(client.getIpAddress());
+
+        try {
+            InetAddress  address = InetAddress.getByName(ip);
+
+            byte[] buf = Helper.fromAppMsgtoByte(msg);
+            DatagramPacket packet = new DatagramPacket(buf, buf.length, address, Helper.STORAGE_PORT);
+            udpServer.send(packet);
+            LOGGER.debug(client.getIpAddress() + "- sent GET to: " + n.getIpAddress());
+
+            byte[] buff = new byte[udpServer.getReceiveBufferSize()];
+            DatagramPacket p = new DatagramPacket(buff, buff.length);
+            LOGGER.debug(client.getIpAddress() + " - waiting GET response...");
+
+            udpServer.receive(p);
+
+            int packet_length = 0;
+            for (int i = 0; i < 4; i++) {
+                int shift = (4 - 1 - i) * 8;
+                packet_length += (buff[i] & 0x000000FF) << shift;
+            }
+
+            byte[] json_bytes = new byte[packet_length];
+            System.arraycopy(buff, 4, json_bytes, 0, packet_length);
+            String receivedMessage = new String(json_bytes);
+
+            ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module());
+            AppMsg msgReceived = mapper.readValue(receivedMessage, AppMsg.class);
+            // reply App Message
+            if(msgReceived instanceof ReplyAppMsg)
+                manageAppReply((ReplyAppMsg)msgReceived);
+            // request conflict message received
+            else if(msgReceived instanceof  RequestConflictMsg){
+                manageConflictMessage((RequestConflictMsg) msgReceived);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
 
     private void manageConflictMessage(RequestConflictMsg msg) {
         switch (msg.getType()) {
             case REQUEST:
-                System.out.println("CLIENT Insert a choice "+msg.getSelection());
-                int selection = readFromCli(msg);
-                ReplyConflictMsg msgRely = new ReplyConflictMsg(AppMsg.TYPE.REPLY, AppMsg.OP.OK, selection);
-                send(msg.getIpSender(), Helper.CONFLICT_LISTEN_PORT, msgRely);
-                System.out.println("SENT selection: " + selection+ " to: " + msg.getIpSender());//on port "+msg.getPortSender() );
-                break;
-            case REPLY:
+                System.out.println("Insert a number to select the right version :\n"+msg.getSelection());
+                System.out.print(">> ");
+                int selection;
+                try {
+                    selection = Integer.parseInt(bufferReader.readLine());
+                    ReplyConflictMsg msgRely = new ReplyConflictMsg(AppMsg.TYPE.REPLY, AppMsg.OP.OK, selection);
+                    send(msg.getIpSender(), Helper.CONFLICT_LISTEN_PORT, msgRely);
+                    LOGGER.info("SENT selection: " + selection+ " to: " + msg.getIpSender());//on port "+msg.getPortSender() );
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
                 break;
         }
     }
 
-    private int  readFromCli(RequestConflictMsg msg) {
+  /*  private int  readFromCli(RequestConflictMsg msg) {
         int selection = -1;
         try {
             System.out.println("Client service: insert the rigth version");
@@ -197,138 +313,18 @@ public class ClientService extends Thread {
         }
         return selection;
     }
-
-    private void manageSystemReply(ReplySystemMsg replyMsg) {
-        ClientService.LOGGER.info(client.getIpAddress() + " - Reply SystemMsg received from " + replyMsg.getIpSender());
-    }
-
-
-    private void manageSystemRequest(RequestSystemMsg msg) {
-        switch (msg.getOperation()) {
-            case PUT:
-                Versioned vData = msg.getVersionedData();
-                String key = vData.getData().getKey();
-                Versioned mergeData = new Versioned(vData.getData());
-                mergeData.mergeTo(vData);                   // merge VersionData received with my data
-                storage.put(mergeData);
-                ClientService.LOGGER.info(client.getIpAddress() + " - PUT SystemMsg <" + key + "> version: "+ mergeData.getVersion());
-                send(msg.getIpSender(), Helper.QUORUM_PORT, new ReplySystemMsg(AppMsg.OP.OK, client.getIpAddress(), Helper.QUORUM_PORT, "PUT Succesfully "));
-                break;
-            case GET:
-                ClientService.LOGGER.info(client.getIpAddress() + " - GET SystemMsg received ");
-                if (storage.containsKey(msg.getKey())) {
-                    Versioned myData = storage.get(msg.getKey());
-                    ReplySystemMsg reply = new ReplySystemMsg(AppMsg.OP.OK, client.getIpAddress(), Helper.STORAGE_PORT, myData);
-                    send(msg.getIpSender(), Helper.QUORUM_PORT, reply);
-
-                } else {
-                    String info = client.getIpAddress() + " - Data is not present into my storage";
-                    RequestSystemMsg replyErr = new RequestSystemMsg(AppMsg.OP.ERR, msg.getIpSender(), Helper.STORAGE_PORT, info);
-                    send(msg.getIpSender(), Helper.QUORUM_PORT, replyErr);
-                }
-                break;
-        }
-    }
+*/
 
     private void manageAppReply(ReplyAppMsg msg) {
         switch (msg.getOperation()) {
             case OK:
-                ClientService.LOGGER.info(client.getIpAddress() + " - REPLY  OK " + msg.getMsg() + " from " + msg.getIpSender());
+                ClientService.LOGGER.info(client.getIpAddress() + " - REPLY  OK  from " + msg.getIpSender()+" " + msg.getMsg());
                 break;
             case ERR:
                 ClientService.LOGGER.info(client.getIpAddress() + " - REPLY  ERR " + msg.getMsg());
                 break;
         }
     }
-
-    /**
-     * The coordinator of the request manages the  message sent by a client.
-     *
-     * @param msg
-     */
-/*
-    private void manageAppRequest(RequestAppMsg<?> msg) {
-        switch (msg.getOperation()) {
-            case PUT:
-                ClientService.LOGGER.info(this.client.getIpAddress() + " - Received  AppMsg " + msg.getOperation() + " <" + msg.getKey() + ":" + msg.getValue() + ">");// from " + msg.getIpSender());
-                if (storage.containsKey(msg.getKey())) { // UPDATE data and increment version
-                    Versioned d = storage.get(msg.getKey());
-                    d.setData(new StorageData<>(msg.getKey(), msg.getValue()));
-                    d.getVersion().increment(client.getId());
-                    send(msg.getIpSender(),Helper.STORAGE_PORT,new ReplyAppMsg(AppMsg.OP.OK, " UPDATE <" + msg.getKey()+":"+msg.getValue()+"> "+d.getVersion()));
-                    //client.get_storageService().sendToMyStorage(new ReplyAppMsg(AppMsg.OP.OK, " Updated succesfully key:" + msg.getKey()));
-                } else { // PUT new object
-                    Versioned vData = new Versioned(new StorageData<>(msg.getKey(), msg.getValue()));
-                    vData.getVersion().increment(client.getId());
-                    this.storage.put(vData);
-                    ClientService.LOGGER.info(this.client.getIpAddress() + " - Inserted <" + msg.getKey() + ":" + msg.getValue() + "> into local database");
-
-                    //sent to all WRITE_NODES the new object received and wait the selection
-                    List<ReplySystemMsg> rep = askQuorum(vData, Helper.QUORUM_PORT, AppMsg.OP.PUT);
-                    if(rep.size() < WRITE_NODES-1)
-                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.ERR, " Error: PUT has note received version from allthe backups"));
-                    else
-                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " PUT  <" + msg.getKey() + ":" + msg.getValue() + ">"));
-                }
-                break;
-            case GET:
-                String key = msg.getKey();
-                ClientService.LOGGER.info(this.client.getIpAddress() + " - Received AppMsg " + msg.getOperation() + "<" + key + ">");
-                if (storage.containsKey(key)) {
-                    Versioned myData = storage.get(key);
-                    List<ReplySystemMsg> replies = askQuorum(myData,Helper.QUORUM_PORT, AppMsg.OP.GET);
-                    //Merge version
-                    if(replies.isEmpty() && replies.size() < READ_NODES-1)
-                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.ERR, " Error: GET has note received version from all the backups"));
-                    else{
-                      //  for (ReplySystemMsg msgReply :replies) {  //suppose only one single versioned received
-                            ReplySystemMsg reply =replies.get(0);
-                            Versioned bkuData = reply.getData();
-                          ClientService.LOGGER.info(this.client.getIpAddress() + " - Received Versioned: <"+reply.getData().getData().getKey()+"> version: "+ reply.getData().getVersion()+" from "+reply.getIpSender());
-                            switch (bkuData.compareTo(myData)) {
-                                case BEFORE: //my data version is newer than the backup version
-                                    send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " GET "+ myData.getData().toString()));
-                                    for (Node backup: preferenceNodes){
-                                        backup.sendToStorage(new RequestSystemMsg(AppMsg.OP.PUT, client.getIpAddress(),Helper.STORAGE_PORT,myData));
-                                    }
-                                    break;
-                                case AFTER: //my data version is older than the backup version
-                                    myData.mergeTo(bkuData);
-                                    send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " GET "+ bkuData.getData().toString()));
-                                    break;
-                                case CONCURRENT: //concurrent version must be resolved by the client
-                                    String selection = "1: "+myData.getData().toString()+ "2: "+bkuData.getData().toString();
-                                    // TODO message to send to the client in order to resolve the concurrent version
-                                    send(msg.getIpSender(),Helper.STORAGE_PORT, new RequestConflictMsg(AppMsg.TYPE.REQUEST, AppMsg.OP.GET, client.getIpAddress(),Helper.STORAGE_PORT, selection));
-                                    break;
-                            }
-                      //  }
-                    }
-
-                    //5) sent reconcilied version
-                    send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " GET "+ myData.getData().toString()));
-                }
-                    else {
-                    send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.ERR, " GET key not found"));
-                }
-                break;
-            case LIST:
-                Map<String, Versioned> db = this.storage.getStorage();
-                if (!db.isEmpty()) {
-                    send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " LIST " + db.toString()));
-                } else {
-                    send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.ERR, " LIST empty data database"));
-                }
-
-                break;
-        }
-    }
-
-    public void sendToMyStorage(AppMsg msg) {
-        / send  message to the storage  node
-        this.send(client.getIpAddress(), Helper.STORAGE_PORT, msg);
-    }
-    */
 
     protected void send(String destIp, int destPort, AppMsg msg) {
         try {
@@ -337,25 +333,8 @@ public class ClientService extends Thread {
 
             if (msg.getIpSender() == null)
                 msg.setIpSender(client.getIpAddress());
+            byte[] buf = Helper.fromAppMsgtoByte(msg);
 
-            ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module());
-            byte[] jsonByte = mapper.writeValueAsBytes(msg);
-
-            int packet_length = jsonByte.length;
-
-            // Convert the packet length to the byte representation of the int.
-            byte[] length_bytes = new byte[4];
-            length_bytes[0] = (byte) (packet_length >> 24);
-            length_bytes[1] = (byte) ((packet_length << 8) >> 24);
-            length_bytes[2] = (byte) ((packet_length << 16) >> 24);
-            length_bytes[3] = (byte) ((packet_length << 24) >> 24);
-
-            ByteBuffer byteBuffer = ByteBuffer.allocate(4 + jsonByte.length);
-            byteBuffer.put(length_bytes);
-            byteBuffer.put(jsonByte);
-            byte[] buf = byteBuffer.array();
-
-            // / Initialize a datagram packet with data and address
             DatagramSocket dsocket = new DatagramSocket();
             DatagramPacket packet = new DatagramPacket(buf, buf.length, address, destPort);
             dsocket.send(packet);
@@ -364,122 +343,23 @@ public class ClientService extends Thread {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-
     }
 
-/*
-    public List<ReplySystemMsg> askQuorum(Versioned vData, int listenPort, AppMsg.OP op) {
-        RequestSystemMsg reqQuorum;
-
-        if (op.equals(AppMsg.OP.PUT))
-            reqQuorum = new RequestSystemMsg(op, client.getIpAddress(), 0, vData);
-        else {
-            reqQuorum = new RequestSystemMsg(op, client.getIpAddress(), 0, vData.getData().getKey());
-        }
-
-        try {
-            DatagramSocket dsocket = new DatagramSocket(listenPort);
-
-            // send msg to all the  nodes in the preference list
-            for (Node backup : preferenceNodes) {
-
-                ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module());
-                byte[] jsonByte = mapper.writeValueAsBytes(reqQuorum);
-
-                int packet_length = jsonByte.length;
-                // Convert the packet length to the byte representation of the int.
-                byte[] length_bytes = new byte[4];
-                length_bytes[0] = (byte) (packet_length >> 24);
-                length_bytes[1] = (byte) ((packet_length << 8) >> 24);
-                length_bytes[2] = (byte) ((packet_length << 16) >> 24);
-                length_bytes[3] = (byte) ((packet_length << 24) >> 24);
-
-                ByteBuffer byteBuffer = ByteBuffer.allocate(4 + jsonByte.length);
-                byteBuffer.put(length_bytes);
-                byteBuffer.put(jsonByte);
-                byte[] buf = byteBuffer.array();
-
-                InetAddress destAddress = InetAddress.getByName(backup.getIpAddress());
-                DatagramPacket packet = new DatagramPacket(buf, buf.length, destAddress, Helper.STORAGE_PORT);
-
-                dsocket.send(packet);
-                ClientService.LOGGER.info(this.client.getIpAddress() + " - Sent "+op+" SystemMsg  "+backup.getIpAddress() );
-            }
-            dsocket.close();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        //wait quorum selection
-        return _waitQuorum(reqQuorum.getOperation(), listenPort);
-    }
-
-    private List<ReplySystemMsg> _waitQuorum(AppMsg.OP op, int listenPort) {
-
-        DatagramSocket udpQuorum;  //server listen Quorum selection
-
-        //int numResponses = (op == AppMsg.OP.PUT) ? WRITE_NODES : READ_NODES;
-        int numResponses = (op == AppMsg.OP.PUT) ? WRITE_NODES-1 : READ_NODES-1;
-        ArrayList<ReplySystemMsg> replies = new ArrayList<>();
-
-        try {
-            udpQuorum = new DatagramSocket(listenPort);
-            //TODO insert timeout into configuration file
-            udpQuorum.setSoTimeout(3000);
-
-            //wait the selection
-            for (int j = 0; j < numResponses; j++) {
-                byte[] buff = new byte[udpQuorum.getReceiveBufferSize()];
-                DatagramPacket p = new DatagramPacket(buff, buff.length);
-                ClientService.LOGGER.debug(this.client.getIpAddress() + " - Waiting " + numResponses + " quorum msg selection...");
-
-                try {
-                    udpQuorum.receive(p);
-                }
-                catch (SocketTimeoutException e) { //timeout exception
-                    ClientService.LOGGER.info(this.client.getIpAddress() + " - Timeout reached, waiting quorum Msg...");
-                    //udpQuorum.close();
-                    return replies;
-                }
-
-                int packet_length = 0;
-                for (int i = 0; i < 4; i++) {
-                    int shift = (4 - 1 - i) * 8;
-                    packet_length += (buff[i] & 0x000000FF) << shift;
-                }
-
-                byte[] json_bytes = new byte[packet_length];
-                System.arraycopy(buff, 4, json_bytes, 0, packet_length);
-                String receivedMessage = new String(json_bytes);
-
-                ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module());
-                ReplySystemMsg msgQuorum = mapper.readValue(receivedMessage, ReplySystemMsg.class);
-                ClientService.LOGGER.info(this.client.getIpAddress() + " - Received quorum Msg from " + msgQuorum.getIpSender());
-                replies.add(msgQuorum);
-
-            }
-
-            udpQuorum.close();
-
-        } catch (SocketException e) {
-            ClientService.LOGGER.error(this.client.getIpAddress() + " - " + e);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return replies;
-    }
-*/
     public void shutdown() {
         LOGGER.info(this.client.getIpAddress() + "-  Storage service has been shutdown...");
         udpServer.close();
     }
 
-    public Node getRandomNode(){
+    public Node getRandomNode() throws IllegalArgumentException{
         ArrayList<Node> nodes = cHasher.getAllNodes();
         Random rand = new Random();
-        int random = rand.nextInt(nodes.size());
+        int random;
+        if(nodes.size()>0) {
+            random = rand.nextInt(nodes.size());
+        }
+        else {
+            throw  new IllegalArgumentException("The list of nodes is empty");
+        }
         return nodes.get(random);
     }
 
@@ -489,7 +369,7 @@ public class ClientService extends Thread {
 
         if(nexts.contains(nodeUp) && previous.contains(nodeUp)){
             for (Versioned vdata : storage.getStorage().values()) {
-                RequestSystemMsg msg = new RequestSystemMsg(AppMsg.OP.PUT, client.getIpAddress(), CliHelper.STORAGE_PORT, vdata);
+                RequestSystemMsg msg = new RequestSystemMsg(AppMsg.OP.PUT, client.getIpAddress(), ClientHelper.STORAGE_PORT, vdata);
                 ClientService.LOGGER.info(this.client.getIpAddress() + " - UP node " + nodeUp.getIpAddress() + ", Sent data " + vdata.getData());
                 nodeUp.sendToStorage(msg);
             }

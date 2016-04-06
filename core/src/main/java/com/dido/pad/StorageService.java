@@ -28,9 +28,9 @@ public class StorageService extends Thread {
 
     public static final Logger LOGGER = Logger.getLogger(StorageService.class);
 
-    public int N_REPLICAS = 2;  //  include olso the node master ( N=2 , mode master + successive node)
-    public int WRITE_NODES = 1;
-    public int READ_NODES = 2;
+    public int N_REPLICAS = 2;  //  include also the node master ( N=2 , mode master + successive node)
+    public int WRITE_NODES = 2; //1 //number of nodes after the master tha must return a write response
+    public int READ_NODES = 1;   //2  //number of nodes that must read that must return a read response
 
     private Hasher<Node> cHasher;
     private PersistentStorage storage;
@@ -51,10 +51,7 @@ public class StorageService extends Thread {
         this.cHasher = new Hasher<>(Helper.NUM_NODES_VIRTUALS, DefaultFunctions::SHA1, DefaultFunctions::BytesConverter);
         this.myNode = node;
 
-       // storage = new PersistentStorage(myNode.getId());
         storage = new PersistentStorage(myNode.getId(),Helper.CLEAR_DATABASE_INTO_NODE);
-
-        //storage = new PersistentStorage();
 
         // ADD seed nodes to the node storage service
         for (GossipMember member : seedNodes) {
@@ -110,17 +107,27 @@ public class StorageService extends Thread {
 
     @Override
     public void run() {
+        while (N_REPLICAS > cHasher.getAllNodes().size()) {
+            StorageService.LOGGER.info(this.myNode.getIpAddress() + " -  Required " + N_REPLICAS + " backup node, found " + cHasher.getAllNodes().size());
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        preferenceNodes = cHasher.getNextServers(myNode, N_REPLICAS);
+
         while (keepRunning.get()) {
-            while (N_REPLICAS > cHasher.getAllNodes().size()) {
+           /* while (N_REPLICAS > cHasher.getAllNodes().size()) {
                 StorageService.LOGGER.info(this.myNode.getIpAddress() + " -  Required " + N_REPLICAS + " backup node, found " + cHasher.getAllNodes().size());
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-            }
+            }*/
 
-            preferenceNodes = cHasher.getNextServers(myNode, N_REPLICAS-1);
+           // preferenceNodes = cHasher.getNextServers(myNode, N_REPLICAS);
 
             try {
                 byte[] buff = new byte[udpServer.getReceiveBufferSize()];
@@ -158,9 +165,6 @@ public class StorageService extends Thread {
                 else if(msg instanceof RequestClientMsg){
                     manageClientRequest((RequestClientMsg) msg);
                 }
-               /* else if(msg instanceof ReplyConflictMsg){
-                    manageConflictMessage((ReplyConflictMsg) msg);
-                }*/
                 // Reply System message received
                 else if (msg instanceof ReplySystemMsg) {
                     ReplySystemMsg replyMsg = (ReplySystemMsg) msg;
@@ -202,19 +206,10 @@ public class StorageService extends Thread {
 
 
     }
- /*   private void manageConflictMessage( ReplyConflictMsg msg) {
-        switch (msg.getType()) {
-            case REPLY:
-                System.out.print("Selection from clinet "+msg.getSelection());
-                break;
-        }
-    }
-*/
+
     private void manageSystemReply(ReplySystemMsg replyMsg) {
         StorageService.LOGGER.info(myNode.getIpAddress() + " - Reply SystemMsg received from " + replyMsg.getIpSender());
     }
-
-
 
 
     private void manageSystemRequest(RequestSystemMsg msg) {
@@ -237,16 +232,18 @@ public class StorageService extends Thread {
                 send(msg.getIpSender(), Helper.QUORUM_PORT, new ReplySystemMsg(AppMsg.OP.OK, myNode.getIpAddress(), Helper.QUORUM_PORT, "PUT Succesfully "));
                 break;
             case GET:
-                StorageService.LOGGER.info(this.myNode.getIpAddress() + " - GET SystemMsg received ");
+                LOGGER.info(myNode.getIpAddress() + " - GET key <"+msg.getKey()+"> SystemMsg received  from "+msg.getIpSender());
                 if (storage.containsKey(msg.getKey())) {
                     Versioned myData = storage.get(msg.getKey());
                     ReplySystemMsg reply = new ReplySystemMsg(AppMsg.OP.OK, myNode.getIpAddress(), Helper.STORAGE_PORT, myData);
                     send(msg.getIpSender(), Helper.QUORUM_PORT, reply);
+                    LOGGER.info(myNode.getIpAddress() + " - SENT <"+msg.getKey()+","+myData.getData().getValue()+"> to"+msg.getIpSender());
 
                 } else {
-                    String info = myNode.getIpAddress() + " - Data is not present into my storage";
-                    ReplySystemMsg replyErr = new ReplySystemMsg(AppMsg.OP.ERR, msg.getIpSender(), Helper.STORAGE_PORT, info);
+                    String err = myNode.getIpAddress() + " - Data is not present into my storage";
+                    ReplySystemMsg replyErr = new ReplySystemMsg(AppMsg.OP.ERR, msg.getIpSender(), Helper.STORAGE_PORT, err);
                     send(msg.getIpSender(), Helper.QUORUM_PORT, replyErr);
+                    LOGGER.info(myNode.getIpAddress() + " - SENT "+err+" to "+ msg.getIpSender());
                 }
                 break;
         }
@@ -268,7 +265,14 @@ public class StorageService extends Thread {
                     d.getVersion().increment(myNode.getId());
                     storage.update(d);
                     send(msg.getIpSender(),Helper.STORAGE_PORT,new ReplyAppMsg(AppMsg.OP.OK, " UPDATE <" + msg.getKey()+":"+msg.getValue()+"> "+d.getVersion()));
-                    //myNode.get_storageService().sendToMyStorage(new ReplyAppMsg(AppMsg.OP.OK, " Updated succesfully key:" + msg.getKey()));
+
+               /*     //sent to all WRITE_NODES
+                    List<ReplySystemMsg> rep = askQuorum(d, Helper.QUORUM_PORT, AppMsg.OP.PUT);
+                    if(rep.size() < WRITE_NODES)
+                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.ERR, " Error: PUT not all the WRITE NODES  have responded"));
+                    else
+                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " PUT  <" + msg.getKey() + ":" + msg.getValue() + ">"));
+                        */
                 } else { // PUT new object
                     Versioned vData = new Versioned(new StorageData<>(msg.getKey(), msg.getValue()));
                     vData.getVersion().increment(myNode.getId());
@@ -277,8 +281,8 @@ public class StorageService extends Thread {
 
                     //sent to all WRITE_NODES the new object received and wait the selection
                     List<ReplySystemMsg> rep = askQuorum(vData, Helper.QUORUM_PORT, AppMsg.OP.PUT);
-                    if(rep.size() < WRITE_NODES-1)
-                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.ERR, " Error: PUT has note received version from all Rethe backups"));
+                    if(rep.size() < WRITE_NODES)//-1
+                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.ERR, " Error: PUT not all the WRITE NODES  have responded"));
                     else
                         send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " PUT  <" + msg.getKey() + ":" + msg.getValue() + ">"));
                 }
@@ -289,49 +293,54 @@ public class StorageService extends Thread {
                 if (storage.containsKey(key)) {
                     Versioned myData = storage.get(key);
                     List<ReplySystemMsg> replies = askQuorum(myData,Helper.QUORUM_PORT, AppMsg.OP.GET);
-                    //Merge version
-                    //|| (replies.get(0).getMsg()==null)
-                    if(replies.isEmpty() && replies.size() < READ_NODES-1)
+
+                    if(replies.isEmpty() || replies.size() < READ_NODES) {
                         send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.ERR, " Error: GET has note received version from all the backups"));
-                    else if(!(replies.get(0).getOperation().equals(AppMsg.OP.ERR))){
-                      //  for (ReplySystemMsg msgReply :replies) {  //suppose only one single versioned received
-                        ReplySystemMsg reply = replies.get(0);
-                        Versioned bkuData = reply.getData();
-                        //StorageService.LOGGER.info(myNode.getIpAddress() + " - Received Versioned: <"+reply.getData().getData().getKey()+"> version: "+ reply.getData().getVersion()+" from "+reply.getIpSender());
-                            switch (bkuData.compareTo(myData)) {
-                                case BEFORE: //my data version is newer than the backup version
-                                    StorageService.LOGGER.info(myNode.getIpAddress() + " - BEFORE version: <"+reply.getData().getData().getKey()+"> version: "+ reply.getData().getVersion()+" from "+reply.getIpSender());
-                                    send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " GET "+ myData.getData().toString()));
-                                    for (Node backup: preferenceNodes){
-                                        backup.sendToStorage(new RequestSystemMsg(AppMsg.OP.PUT, myNode.getIpAddress(),Helper.STORAGE_PORT,myData));
-                                    }
-                                    break;
-                                case AFTER: //my data version is older than the backup version
-                                    StorageService.LOGGER.info(myNode.getIpAddress() + " - AFTER version: <"+reply.getData().getData().getKey()+"> version: "+ reply.getData().getVersion()+" from "+reply.getIpSender());
-                                    myData.mergeTo(bkuData);
-                                    // TODO: this is the cause of receiveing two messages GET
-                                    send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " GET "+ bkuData.getData().toString()));
-                                    break;
-                                case CONCURRENT: //concurrent version must be resolved by the client
-                                    StorageService.LOGGER.info(myNode.getIpAddress() + " - CONCURRENT version: <"+reply.getData().getData().getKey()+"> version: "+ reply.getData().getVersion()+" from "+reply.getIpSender());
-                                    String selection = " 1 : "+myData.getData().toString()+ " \n 2 : "+bkuData.getData().toString();
-                                    AppMsg conflict = new RequestConflictMsg(AppMsg.TYPE.REQUEST, AppMsg.OP.GET,myNode.getIpAddress(),Helper.STORAGE_PORT, selection);
-                                    sendConflict(msg.getIpSender(),conflict, Helper.CONFLICT_LISTEN_PORT);
-                                    int sel = waitConflictResponse(Helper.CONFLICT_LISTEN_PORT);
-                                    StorageService.LOGGER.info(myNode.getIpAddress() + " - Received selection " + sel);
-                                    switch (sel){
-                                        case(1): //my data is chosen from the client
-                                            for (Node backup: preferenceNodes){
-                                                backup.sendToStorage(new RequestSystemMsg(AppMsg.OP.PUT, myNode.getIpAddress(),Helper.STORAGE_PORT,myData));
-                                            }
-                                            send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " GET "+ myData.getData().toString()));
-                                        case(2): {//backup  is chosen from the client
-                                            sendToMyStorage(new RequestSystemMsg(AppMsg.OP.PUT, myNode.getIpAddress(), Helper.STORAGE_PORT, bkuData));
-                                            send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " GET "+ bkuData.getData().toString()));
+                        StorageService.LOGGER.info(myNode.getIpAddress() + " - ERR  has not received all the backup nodes version to"+msg.getIpSender());
+                    }
+
+                    else {
+                        for (ReplySystemMsg msgReply :replies) {  //for all READ_NODES version
+                            if(!msgReply.getOperation().equals(AppMsg.OP.ERR)) {
+                                Versioned bkuData = msgReply.getData();
+                                switch (bkuData.compareTo(myData)) {
+                                    case BEFORE: //my data version is newer than the backup version
+                                        LOGGER.info(myNode.getIpAddress() + " - BEFORE version: <" + msgReply.getData().getData().getKey() + "> version: " + msgReply.getData().getVersion() + " from " + msgReply.getIpSender());
+                                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " GET " + myData.getData().toString()));
+                                        for (Node backup : preferenceNodes) {
+                                            backup.sendToStorage(new RequestSystemMsg(AppMsg.OP.PUT, myNode.getIpAddress(), Helper.STORAGE_PORT, myData));
                                         }
-                                    }
-                                    break;
+                                        break;
+                                    case AFTER: //my data version is older than the backup version
+                                        LOGGER.info(myNode.getIpAddress() + " - AFTER version: <" + msgReply.getData().getData().getKey() + "> version: " + msgReply.getData().getVersion() + " from " + msgReply.getIpSender());
+                                        myData.mergeTo(bkuData);
+                                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " GET " + bkuData.getData().toString()));
+                                        break;
+                                    case CONCURRENT: //concurrent version must be resolved by the client
+                                        LOGGER.info(myNode.getIpAddress() + " - CONCURRENT version: <" + msgReply.getData().getData().getKey() + "> version: " + msgReply.getData().getVersion() + " from " + msgReply.getIpSender());
+                                        String selection = " 1 : " + myData.getData().toString() + " \n 2 : " + bkuData.getData().toString();
+                                        AppMsg conflict = new RequestConflictMsg(AppMsg.TYPE.REQUEST, AppMsg.OP.GET, myNode.getIpAddress(), Helper.STORAGE_PORT, selection);
+                                        sendConflict(msg.getIpSender(), conflict, Helper.CONFLICT_LISTEN_PORT);
+                                        int sel = waitConflictResponse(Helper.CONFLICT_LISTEN_PORT);
+                                        LOGGER.info(myNode.getIpAddress() + " - Received selection " + sel);
+                                        switch (sel) {
+                                            case (1): //my data is chosen from the client
+                                                for (Node backup : preferenceNodes) {
+                                                    backup.sendToStorage(new RequestSystemMsg(AppMsg.OP.PUT, myNode.getIpAddress(), Helper.STORAGE_PORT, myData));
+                                                }
+                                                send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " GET " + myData.getData().toString()));
+                                            case (2): {//backup  is chosen from the client
+                                                sendToMyStorage(new RequestSystemMsg(AppMsg.OP.PUT, myNode.getIpAddress(), Helper.STORAGE_PORT, bkuData));
+                                                send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " GET " + bkuData.getData().toString()));
+                                            }
+                                        }
+                                        break;
+                                }
                             }
+                            else {  //Get operation from READ nodes has returned an ERR message
+                                LOGGER.info(myNode.getIpAddress() + " - Received ERR "+msgReply.getMsg()+" from  " +msg.getIpSender());
+                            }
+                        }
                     }
                 }
                     else {
@@ -369,28 +378,14 @@ public class StorageService extends Thread {
 
     private void send(String destIp, int destPort, AppMsg msg) {
         try {
-
             InetAddress address = InetAddress.getByName(destIp);
 
             if (msg.getIpSender() == null)
                 msg.setIpSender(myNode.getIpAddress());
 
             ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module());
-            byte[] jsonByte = mapper.writeValueAsBytes(msg);
 
-            int packet_length = jsonByte.length;
-
-            // Convert the packet length to the byte representation of the int.
-            byte[] length_bytes = new byte[4];
-            length_bytes[0] = (byte) (packet_length >> 24);
-            length_bytes[1] = (byte) ((packet_length << 8) >> 24);
-            length_bytes[2] = (byte) ((packet_length << 16) >> 24);
-            length_bytes[3] = (byte) ((packet_length << 24) >> 24);
-
-            ByteBuffer byteBuffer = ByteBuffer.allocate(4 + jsonByte.length);
-            byteBuffer.put(length_bytes);
-            byteBuffer.put(jsonByte);
-            byte[] buf = byteBuffer.array();
+            byte[] buf = Helper.fromAppMsgtoByte(msg);
 
             // / Initialize a datagram packet with data and address
             DatagramSocket dsocket = new DatagramSocket();
@@ -401,8 +396,6 @@ public class StorageService extends Thread {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-
     }
 
 
@@ -411,37 +404,22 @@ public class StorageService extends Thread {
 
         if (op.equals(AppMsg.OP.PUT))
             reqQuorum = new RequestSystemMsg(op, myNode.getIpAddress(), 0, vData);
-        else { //GET message sends only the key
+        else{ //GET method
             reqQuorum = new RequestSystemMsg(op, myNode.getIpAddress(), 0, vData.getData().getKey());
         }
 
         try {
             DatagramSocket dsocket = new DatagramSocket(listenPort);
 
-            // send msg to all the  nodes in the preference list
+            // send msg to all the nodes in the preference list
             for (Node backup : preferenceNodes) {
-
-                ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module());
-                byte[] jsonByte = mapper.writeValueAsBytes(reqQuorum);
-
-                int packet_length = jsonByte.length;
-                // Convert the packet length to the byte representation of the int.
-                byte[] length_bytes = new byte[4];
-                length_bytes[0] = (byte) (packet_length >> 24);
-                length_bytes[1] = (byte) ((packet_length << 8) >> 24);
-                length_bytes[2] = (byte) ((packet_length << 16) >> 24);
-                length_bytes[3] = (byte) ((packet_length << 24) >> 24);
-
-                ByteBuffer byteBuffer = ByteBuffer.allocate(4 + jsonByte.length);
-                byteBuffer.put(length_bytes);
-                byteBuffer.put(jsonByte);
-                byte[] buf = byteBuffer.array();
+                byte [] buf = Helper.fromReqSystemMsgtoByte(reqQuorum);
 
                 InetAddress destAddress = InetAddress.getByName(backup.getIpAddress());
                 DatagramPacket packet = new DatagramPacket(buf, buf.length, destAddress, Helper.STORAGE_PORT);
 
                 dsocket.send(packet);
-                StorageService.LOGGER.info(this.myNode.getIpAddress() + " - Sent "+op+"  SystemMsg  "+backup.getIpAddress() );
+                StorageService.LOGGER.info(this.myNode.getIpAddress() + " - Sent "+op+"  SystemMsg  to "+backup.getIpAddress() );
             }
             dsocket.close();
 
@@ -456,8 +434,8 @@ public class StorageService extends Thread {
 
         DatagramSocket udpQuorum;  //server listen Quorum selection
 
-        //int numResponses = (op == AppMsg.OP.PUT) ? WRITE_NODES : READ_NODES;
-        int numResponses = (op == AppMsg.OP.PUT) ? WRITE_NODES-1 : READ_NODES-1;
+
+        int numResponses = (op == AppMsg.OP.PUT) ? WRITE_NODES : READ_NODES;
         ArrayList<ReplySystemMsg> replies = new ArrayList<>();
 
         try {
@@ -476,7 +454,7 @@ public class StorageService extends Thread {
                 }
                 catch (SocketTimeoutException e) { //timeout exception
                     StorageService.LOGGER.info(this.myNode.getIpAddress() + " - Timeout reached, waiting quorum Msg...");
-                    //udpQuorum.close();
+                    udpQuorum.close();
                     return replies;
                 }
 
@@ -494,17 +472,13 @@ public class StorageService extends Thread {
                 ReplySystemMsg msgQuorum = mapper.readValue(receivedMessage, ReplySystemMsg.class);
                 StorageService.LOGGER.info(myNode.getIpAddress() + " - Received quorum Msg from " + msgQuorum.getIpSender());
                 replies.add(msgQuorum);
-
             }
-
             udpQuorum.close();
-
         } catch (SocketException e) {
             StorageService.LOGGER.error(this.myNode.getIpAddress() + " - " + e);
         } catch (IOException e) {
             e.printStackTrace();
         }
-
         return replies;
     }
 
@@ -517,22 +491,7 @@ public class StorageService extends Thread {
             if (msg.getIpSender() == null)
                 msg.setIpSender(myNode.getIpAddress());
 
-            ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module());
-            byte[] jsonByte = mapper.writeValueAsBytes(msg);
-
-            int packet_length = jsonByte.length;
-
-            // Convert the packet length to the byte representation of the int.
-            byte[] length_bytes = new byte[4];
-            length_bytes[0] = (byte) (packet_length >> 24);
-            length_bytes[1] = (byte) ((packet_length << 8) >> 24);
-            length_bytes[2] = (byte) ((packet_length << 16) >> 24);
-            length_bytes[3] = (byte) ((packet_length << 24) >> 24);
-
-            ByteBuffer byteBuffer = ByteBuffer.allocate(4 + jsonByte.length);
-            byteBuffer.put(length_bytes);
-            byteBuffer.put(jsonByte);
-            byte[] buf = byteBuffer.array();
+            byte[] buf = Helper.fromAppMsgtoByte(msg);
 
             // / Initialize a datagram packet with data and address
             DatagramSocket dsocket = new DatagramSocket(listenPort);
@@ -581,13 +540,6 @@ public class StorageService extends Thread {
             response = msgQuorum.getSelection();
 
 
-        } catch (SocketException e1) {
-            e1.printStackTrace();
-
-        } catch (JsonMappingException e1) {
-            e1.printStackTrace();
-        } catch (JsonParseException e1) {
-            e1.printStackTrace();
         } catch (IOException e1) {
             e1.printStackTrace();
         }
