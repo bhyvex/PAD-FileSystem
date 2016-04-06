@@ -102,7 +102,8 @@ public class ClientService{//} extends Thread {
                 "\t put key value   : put the <key:value> into the system \n"  +
                 "\t get key         : retrieve the value associated to te key \n"+
                 "\t list ipAddress  : lists the pairs <key:value> into the database of ipAddress \n"+
-                "\t force key value ip : snd to the specidifc ip the key value \n"+
+                "\t rm key          : remove the key valu in the master and in the backups \n"+
+                "\t force key value ip : sent to the specific ip the key value pair\n"+
                 "\t nodes           : shows the nodes active inthe system \n";
 
         System.out.print("\nInsert a command (h for usage message)");
@@ -132,6 +133,10 @@ public class ClientService{//} extends Thread {
                     String ip = cmds[1];
                     sendListAndWait(ip);
                     break;
+                case ("rm"):
+                    String Rmkey = cmds[1];
+                    sendRm(Rmkey);
+                    break;
                 case ("nodes"):
                     System.out.print(getcHasher().getAllNodes());
                     break;
@@ -147,6 +152,15 @@ public class ClientService{//} extends Thread {
 
             }
         }
+    }
+
+    private void sendRm(String rmkey) {
+        Node n = getcHasher().getServerForData(rmkey);
+        RequestAppMsg msgRm = new RequestAppMsg(AppMsg.OP.RM,rmkey,"");
+        msgRm.setIpSender(client.getIpAddress());
+        n.sendToStorage(msgRm);
+        LOGGER.info(client.getIpAddress() + "- sent RM  to " + n.getIpAddress());
+
     }
 
     private void sendForce(String kk, String vv, String ip) {
@@ -302,18 +316,6 @@ public class ClientService{//} extends Thread {
         }
     }
 
-  /*  private int  readFromCli(RequestConflictMsg msg) {
-        int selection = -1;
-        try {
-            System.out.println("Client service: insert the rigth version");
-            selection = Integer.parseInt( Cli.scanString());
-           // System.out.println("inserted " + s);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return selection;
-    }
-*/
 
     private void manageAppReply(ReplyAppMsg msg) {
         switch (msg.getOperation()) {

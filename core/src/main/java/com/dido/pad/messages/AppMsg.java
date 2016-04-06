@@ -30,7 +30,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 public class AppMsg {
 
     public enum TYPE {REQUEST, REPLY}
-    public enum OP {PUT, GET, LIST, OK, ERR, DSCV }  //DSCV = discovering for client request of gossipMembers in a SystemMsg
+    public enum OP {PUT, GET, LIST, OK, ERR, DSCV ,RM}  //DSCV = discovering for client request of gossipMembers in a SystemMsg
 
     private TYPE type;
     private OP operation;

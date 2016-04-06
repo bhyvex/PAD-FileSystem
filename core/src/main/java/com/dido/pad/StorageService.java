@@ -28,9 +28,9 @@ public class StorageService extends Thread {
 
     public static final Logger LOGGER = Logger.getLogger(StorageService.class);
 
-    public int N_REPLICAS = 2;  //  include also the node master ( N=2 , mode master + successive node)
-    public int WRITE_NODES = 2; //1 //number of nodes after the master tha must return a write response
-    public int READ_NODES = 1;   //2  //number of nodes that must read that must return a read response
+    public int N_REPLICAS = 1;   //  the length of preference list: the backups node after the master in clockwise direction
+    public int WRITE_NODES = 1;  // number of nodes after the master tha must return a write response
+    public int READ_NODES = 1;   // number of nodes that must read that must return a read response
 
     private Hasher<Node> cHasher;
     private PersistentStorage storage;
@@ -246,6 +246,14 @@ public class StorageService extends Thread {
                     LOGGER.info(myNode.getIpAddress() + " - SENT "+err+" to "+ msg.getIpSender());
                 }
                 break;
+            case RM:
+                String keyRm = msg.getKey();
+                if(storage.remove(keyRm)){
+                    LOGGER.info(myNode.getIpAddress() + " - Removed  <"+keyRm+" >from local database");
+                }
+                else{
+                    LOGGER.info(myNode.getIpAddress() + " - Impossible to remove  <"+keyRm+" from local database");
+                }
         }
     }
 
@@ -350,13 +358,30 @@ public class StorageService extends Thread {
             case LIST: //list command from client
                 if (!storage.isEmpty()) {
                     send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " LIST " + storage.toString()));
-                    StorageService.LOGGER.info(myNode.getIpAddress() + " - Sent LIST of my database to " + msg.getIpSender());
+                    LOGGER.info(myNode.getIpAddress() + " - Sent LIST of my database to " + msg.getIpSender());
                 } else {
                     send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.ERR, " LIST: empty database"));
-                    StorageService.LOGGER.info(myNode.getIpAddress() + " - LIST : my database is empty");
+                    LOGGER.info(myNode.getIpAddress() + " - LIST : my database is empty");
                 }
 
                 break;
+            case RM:
+                String keyRm = msg.getKey();
+                if( storage.remove(keyRm)) {
+                    LOGGER.info(myNode.getIpAddress() + " - RM <" + keyRm + "> from local database");
+                    for (int i = 0; i < WRITE_NODES; i++) {
+                        RequestSystemMsg msgRemove = new RequestSystemMsg(AppMsg.OP.RM, myNode.getIpAddress(), Helper.STORAGE_PORT, keyRm);
+                        Node n = preferenceNodes.get(i);
+                        n.sendToStorage(msgRemove);
+                        LOGGER.info(myNode.getIpAddress() + " -Sent RM to  " + n.getIpAddress());
+                    }
+                    send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " RM removed "));
+                }
+                else{
+                  LOGGER.info(myNode.getIpAddress() + " - IMPOSSIBLE RM <" + keyRm + "> from local database");
+                 send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.ERR, " Impossbile to remove "));
+                }
+
         }
     }
 
@@ -548,7 +573,7 @@ public class StorageService extends Thread {
 
 
     public void shutdown() {
-        LOGGER.info(this.myNode.getIpAddress() + "-  Storage service has been shutdown...");
+        LOGGER.info(myNode.getIpAddress() + "-  Storage service has been shutdown...");
         udpServer.close();
     }
 
@@ -560,7 +585,7 @@ public class StorageService extends Thread {
         if(nexts.contains(nodeUp) && previous.contains(nodeUp)){
             for (Versioned vdata : storage.getStorage().values()) {
                 RequestSystemMsg msg = new RequestSystemMsg(AppMsg.OP.PUT, myNode.getIpAddress(), myNode.getPortStorage(), vdata);
-                StorageService.LOGGER.info(this.myNode.getIpAddress() + " - UP node " + nodeUp.getIpAddress() + ", Sent data " + vdata.getData());
+                LOGGER.info(myNode.getIpAddress() + " - UP node " + nodeUp.getIpAddress() + ", Sent data " + vdata.getData());
                 nodeUp.sendToStorage(msg);
             }
         }

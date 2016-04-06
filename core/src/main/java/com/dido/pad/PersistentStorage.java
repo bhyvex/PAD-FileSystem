@@ -73,6 +73,14 @@ public class PersistentStorage {
         return _treeMap.isEmpty();
     }
 
+    synchronized public boolean remove(String key){
+        if (_treeMap.containsKey(key)) {
+            _treeMap.remove(key);
+            _db.commit();
+            return true;
+        } else return false;
+    }
+
     synchronized public Map<String, Versioned> getStorage(){
         return  _treeMap.snapshot();
     }

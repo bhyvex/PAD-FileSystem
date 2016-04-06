@@ -8,7 +8,7 @@ import com.dido.pad.data.Versioned;
 public class RequestSystemMsg extends AppMsg {
 
     private Versioned data;
-    private String key;  //for GET message
+    private String key;  // OP.GET: contain possible error message, OP.RM : contain the key to remove,
 
     public RequestSystemMsg() {
     }
