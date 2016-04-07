@@ -30,7 +30,12 @@
                 <enabled>false</enabled>
             </snapshots>
        </repository>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
      </repositories>
+
 
     <build>
             <plugins>
@@ -100,11 +105,17 @@
             <!--<version>0.0.3</version>-->
         <!--</dependency>-->
 
-        <dependency>
+    <!--    <dependency>
             <groupId>io.teknek</groupId>
             <artifactId>gossip</artifactId>
             <version>0.0.3</version>
+        </dependency>-->
+        <dependency>
+            <groupId>com.github.edwardcapriolo</groupId>
+            <artifactId>gossip</artifactId>
+            <version>master</version>
         </dependency>
+
 
         <dependency>
             <groupId>junit</groupId>

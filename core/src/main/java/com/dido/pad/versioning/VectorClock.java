@@ -73,7 +73,7 @@ public class VectorClock  implements Version, Serializable {
      *
      * @param v2 The second VectorClock
      */
-    @Override
+   // @Override
     public OCCUR compare(Version v2) {
         if (!(v2 instanceof VectorClock))
             return OCCUR.CONCURRENT;

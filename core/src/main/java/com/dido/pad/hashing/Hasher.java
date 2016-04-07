@@ -92,21 +92,10 @@ public class Hasher<T> implements IHasher<T> {
     }
 
     public boolean containsNode(T node) {
-        byte[] bb = nodeToByteConverter.convert(node);
-        return this.serversMap.containsKey(ByteBuffer.wrap(bb));
+        ByteBuffer bbServerVirtuals = convertAndApplyHash(startVirtualNodeId, node);
+        return this.serversMap.containsKey(bbServerVirtuals);
     }
 
-    public void printkeyValueHash() {
-        SortedMap<ByteBuffer, T> sorted = serversMap.tailMap(serversMap.firstKey());
-        Iterator<ByteBuffer> iter = sorted.keySet().iterator();
-        while (iter.hasNext()) {
-            ByteBuffer bb = iter.next();
-            T server = serversMap.get(bb);
-            System.out.println("Hash: " + byteBufferToLong(bb) + " Value: " + server); // byteBufferToLong(bb)
-        }
-        System.out.println(" ");
-
-    }
 
     private long byteBufferToLong(ByteBuffer bb) {
         BigInteger bigint = new BigInteger(1, bb.array());
@@ -149,7 +138,7 @@ public class Hasher<T> implements IHasher<T> {
         while (number > 0) {
             bbPrevious = serversMap.lowerKey(bbPrevious);
             if (bbPrevious == null) { // there is no they less than the server key.
-                bbPrevious = serversMap.firstKey();
+                bbPrevious = serversMap.lastKey();
             }
             if (!virtuals.contains(bbPrevious) && !privious.contains(serversMap.get(bbPrevious))) {
                 privious.add(serversMap.get(bbPrevious));

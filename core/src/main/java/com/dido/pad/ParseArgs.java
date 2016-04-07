@@ -17,7 +17,7 @@ public class ParseArgs {
 
     // main -ip ipAddress m1:gp:id m2:gp:id
 
-    @Parameter(description = "[ipGossipMember:gp:id] ")
+    @Parameter(description = "ipGossipMember:id[:gp]")
     private List<String> gossipMember = new ArrayList<>();
 
     @Parameter(names="--help", help=true, description=" Show this help message")
@@ -30,10 +30,10 @@ public class ParseArgs {
     private String id = "127.0.0.1";
 
     @Parameter(names = "-gp", description = "Port of the gossiping service")
-    private int gossipPort = 2000;
+    private int gossipPort = Helper.GOSSIP_PORT ;//2000;
 
     @Parameter(names = "-sp", description = "Port of the storage service")
-    private int storagePort = 3000;
+    private int storagePort = Helper.STORAGE_PORT; //3000;
 
     public ArrayList<GossipMember> getGossipMember() {
         ArrayList<GossipMember> startupMembers = new ArrayList<>();
@@ -42,15 +42,15 @@ public class ParseArgs {
                 String ip,id;
                 int portGossip;
                 String [] att = m.split(":");
-               /* if(att.length ==1) {
+                if(att.length ==2) {
                     ip = att[0];
                     portGossip = Helper.GOSSIP_PORT;
                     id = att[0];
-                } else{*/
+                } else{
                     ip = att[0];
                     portGossip = Integer.parseInt(att[1]);
                     id = att[2];
-               // }
+                }
                 startupMembers.add(new RemoteGossipMember(ip,portGossip,id));
         }
         return startupMembers;

@@ -9,28 +9,16 @@ import com.google.common.hash.Hashing;
  */
 public interface iHasher<S> {
 
-
-    public interface BytesConverter<T>{
-
-        public byte[] convert( T data);
+    interface BytesConverter<T>{
+      byte[] convert( T data);
     }
 
-    public  interface HashFunction{
-
-        public byte[] hash( byte[] input);
+    interface HashFunction{
+         byte[] hash( byte[] input);
     }
 
-    public void addServer( S s );
 
-    public void removeServer(S s);
-
-    //public S getServerForData(D d) throws Exception;
-
-
-    /**
-     *
-     */
-    public static class SHA1HashFunction implements HashFunction
+    static class SHA1HashFunction implements HashFunction
     {
         @Override
         public byte[] hash(byte[] input)
@@ -43,15 +31,14 @@ public interface iHasher<S> {
 
     public static final HashFunction SHA1 = new SHA1HashFunction();
 
-    public static HashFunction getSHA1HashFunction()
+    static HashFunction getSHA1HashFunction()
     {
         return SHA1;
     }
 
 
 
-    public static BytesConverter<Node> getNodeToBytesConverter(){
-
+    static BytesConverter<Node> getNodeToBytesConverter(){
         return new BytesConverter<Node>() {
             @Override
             public byte[] convert(Node node) {

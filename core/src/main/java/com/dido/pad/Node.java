@@ -4,6 +4,7 @@ import com.dido.pad.messages.AppMsg;
 import com.google.code.gossip.*;
 import com.google.code.gossip.event.GossipState;
 import com.google.code.gossip.manager.GossipManager;
+import com.google.code.gossip.GossipService;
 import org.apache.log4j.Logger;
 
 

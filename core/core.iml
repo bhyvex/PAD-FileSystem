@@ -11,7 +11,7 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="Maven: io.teknek:gossip:0.0.3" level="project" />
+    <orderEntry type="library" name="Maven: com.github.edwardcapriolo:gossip:master" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson:jackson-datatype-json-org:1.8.0" level="project" />
     <orderEntry type="library" name="Maven: org.codehaus.jackson:jackson-mapper-asl:1.8.6" level="project" />
     <orderEntry type="library" name="Maven: org.codehaus.jackson:jackson-core-asl:1.8.6" level="project" />
