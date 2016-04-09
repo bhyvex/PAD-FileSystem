@@ -3,7 +3,7 @@ package com.dido.pad.messages;
 /**
  * Created by dido-ubuntu on 26/03/16.
  */
-public class ReplyClientMsg  extends AppMsg{
+public class ReplyClientMsg  extends Msg {
 
    // ArrayList<Node> nodes;
     String nodesIds; // String of the form " ip1:id1 ip2:id2 "

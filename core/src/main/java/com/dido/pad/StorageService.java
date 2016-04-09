@@ -6,8 +6,6 @@ import com.dido.pad.data.Versioned;
 import com.dido.pad.hashing.Hasher;
 import com.dido.pad.messages.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.google.code.gossip.GossipMember;
@@ -16,7 +14,6 @@ import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.net.*;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -146,7 +143,7 @@ public class StorageService extends Thread {
                 String receivedMessage = new String(json_bytes);
 
                 ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module());
-                AppMsg msg = mapper.readValue(receivedMessage, AppMsg.class);
+                Msg msg = mapper.readValue(receivedMessage, Msg.class);
 
                 /* Request application message received */
                 if (msg instanceof RequestAppMsg<?>) {
@@ -194,10 +191,10 @@ public class StorageService extends Thread {
                         strBuilder.append(" ");
                     }
 
-                    msgreply = new ReplyClientMsg(AppMsg.OP.OK, myNode.getIpAddress(), myNode.getPortStorage(), strBuilder.toString());
+                    msgreply = new ReplyClientMsg(Msg.OP.OK, myNode.getIpAddress(), myNode.getPortStorage(), strBuilder.toString());
                 }
                 else{
-                    msgreply = new ReplyClientMsg(AppMsg.OP.ERR, myNode.getIpAddress(), myNode.getPortStorage(), " I have no Nodes in my view");
+                    msgreply = new ReplyClientMsg(Msg.OP.ERR, myNode.getIpAddress(), myNode.getPortStorage(), " I have no Nodes in my view");
                 }
                 send(msg.getIpSender(), Helper.CLIENT_PORT, msgreply);
                 StorageService.LOGGER.debug(myNode.getIpAddress()+"- SENT reply to DSCV message to "+msg.getIpSender());
@@ -229,19 +226,19 @@ public class StorageService extends Thread {
                     StorageService.LOGGER.info(myNode.getIpAddress() + " - UPDATED  key <" + key + "> version: " + mergeData.getVersion());
                 }
 
-                send(msg.getIpSender(), Helper.QUORUM_PORT, new ReplySystemMsg(AppMsg.OP.OK, myNode.getIpAddress(), Helper.QUORUM_PORT, "PUT Succesfully "));
+                send(msg.getIpSender(), Helper.QUORUM_PORT, new ReplySystemMsg(Msg.OP.OK, myNode.getIpAddress(), Helper.QUORUM_PORT, "PUT Succesfully "));
                 break;
             case GET:
                 LOGGER.info(myNode.getIpAddress() + " - GET key <"+msg.getKey()+"> SystemMsg received  from "+msg.getIpSender());
                 if (storage.containsKey(msg.getKey())) {
                     Versioned myData = storage.get(msg.getKey());
-                    ReplySystemMsg reply = new ReplySystemMsg(AppMsg.OP.OK, myNode.getIpAddress(), Helper.STORAGE_PORT, myData);
+                    ReplySystemMsg reply = new ReplySystemMsg(Msg.OP.OK, myNode.getIpAddress(), Helper.STORAGE_PORT, myData);
                     send(msg.getIpSender(), Helper.QUORUM_PORT, reply);
                     LOGGER.info(myNode.getIpAddress() + " - SENT <"+msg.getKey()+","+myData.getData().getValue()+"> to"+msg.getIpSender());
 
                 } else {
                     String err = myNode.getIpAddress() + " - Data is not present into my storage";
-                    ReplySystemMsg replyErr = new ReplySystemMsg(AppMsg.OP.ERR, msg.getIpSender(), Helper.STORAGE_PORT, err);
+                    ReplySystemMsg replyErr = new ReplySystemMsg(Msg.OP.ERR, msg.getIpSender(), Helper.STORAGE_PORT, err);
                     send(msg.getIpSender(), Helper.QUORUM_PORT, replyErr);
                     LOGGER.info(myNode.getIpAddress() + " - SENT "+err+" to "+ msg.getIpSender());
                 }
@@ -266,21 +263,21 @@ public class StorageService extends Thread {
     private void manageAppRequest(RequestAppMsg<?> msg) {
         switch (msg.getOperation()) {
             case PUT:
-                StorageService.LOGGER.info(myNode.getIpAddress() + " - Received  AppMsg " + msg.getOperation() + " <" + msg.getKey() + ":" + msg.getValue() + ">");// from " + msg.getIpSender());
+                StorageService.LOGGER.info(myNode.getIpAddress() + " - Received  Msg " + msg.getOperation() + " <" + msg.getKey() + ":" + msg.getValue() + ">");// from " + msg.getIpSender());
                 if (storage.containsKey(msg.getKey())) { // UPDATE data and increment version
                     Versioned d = storage.get(msg.getKey());
                     d.setData(new StorageData<>(msg.getKey(), msg.getValue()));
                     d.getVersion().increment(myNode.getId());
                     storage.update(d);
-                    send(msg.getIpSender(),Helper.STORAGE_PORT,new ReplyAppMsg(AppMsg.OP.OK, " UPDATE <" + msg.getKey()+":"+msg.getValue()+"> "+d.getVersion()));
+                    send(msg.getIpSender(),Helper.STORAGE_PORT,new ReplyAppMsg(Msg.OP.OK, " UPDATE <" + msg.getKey()+":"+msg.getValue()+"> "+d.getVersion()));
 
-               /*     //sent to all WRITE_NODES
-                    List<ReplySystemMsg> rep = askQuorum(d, Helper.QUORUM_PORT, AppMsg.OP.PUT);
+                    //sent to all WRITE_NODES
+                    List<ReplySystemMsg> rep = askQuorum(d, Helper.QUORUM_PORT, Msg.OP.PUT);
                     if(rep.size() < WRITE_NODES)
-                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.ERR, " Error: PUT not all the WRITE NODES  have responded"));
+                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.ERR, " Error: PUT not all the WRITE NODES  have responded"));
                     else
-                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " PUT  <" + msg.getKey() + ":" + msg.getValue() + ">"));
-                        */
+                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.OK, " PUT  <" + msg.getKey() + ":" + msg.getValue() + ">"));
+
                 } else { // PUT new object
                     Versioned vData = new Versioned(new StorageData<>(msg.getKey(), msg.getValue()));
                     vData.getVersion().increment(myNode.getId());
@@ -288,58 +285,58 @@ public class StorageService extends Thread {
                     StorageService.LOGGER.info(this.myNode.getIpAddress() + " - Inserted <" + msg.getKey() + ":" + msg.getValue() + "> into local database");
 
                     //sent to all WRITE_NODES the new object received and wait the selection
-                    List<ReplySystemMsg> rep = askQuorum(vData, Helper.QUORUM_PORT, AppMsg.OP.PUT);
+                    List<ReplySystemMsg> rep = askQuorum(vData, Helper.QUORUM_PORT, Msg.OP.PUT);
                     if(rep.size() < WRITE_NODES)//-1
-                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.ERR, " Error: PUT not all the WRITE NODES  have responded"));
+                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.ERR, " Error: PUT not all the WRITE NODES  have responded"));
                     else
-                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " PUT  <" + msg.getKey() + ":" + msg.getValue() + ">"));
+                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.OK, " PUT  <" + msg.getKey() + ":" + msg.getValue() + ">"));
                 }
                 break;
             case GET:
                 String key = msg.getKey();
-                StorageService.LOGGER.info(myNode.getIpAddress() + " - Received AppMsg " + msg.getOperation() + "<" + key + ">");
+                StorageService.LOGGER.info(myNode.getIpAddress() + " - Received Msg " + msg.getOperation() + "<" + key + ">");
                 if (storage.containsKey(key)) {
                     Versioned myData = storage.get(key);
-                    List<ReplySystemMsg> replies = askQuorum(myData,Helper.QUORUM_PORT, AppMsg.OP.GET);
+                    List<ReplySystemMsg> replies = askQuorum(myData,Helper.QUORUM_PORT, Msg.OP.GET);
 
                     if(replies.isEmpty() || replies.size() < READ_NODES) {
-                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.ERR, " Error: GET has note received version from all the backups"));
+                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.ERR, " Error: GET has note received version from all the backups"));
                         StorageService.LOGGER.info(myNode.getIpAddress() + " - ERR  has not received all the backup nodes version to"+msg.getIpSender());
                     }
 
                     else {
                         for (ReplySystemMsg msgReply :replies) {  //for all READ_NODES version
-                            if(!msgReply.getOperation().equals(AppMsg.OP.ERR)) {
+                            if(!msgReply.getOperation().equals(Msg.OP.ERR)) {
                                 Versioned bkuData = msgReply.getData();
                                 switch (bkuData.compareTo(myData)) {
                                     case BEFORE: //my data version is newer than the backup version
                                         LOGGER.info(myNode.getIpAddress() + " - BEFORE version: <" + msgReply.getData().getData().getKey() + "> version: " + msgReply.getData().getVersion() + " from " + msgReply.getIpSender());
-                                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " GET " + myData.getData().toString()));
+                                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.OK, " GET " + myData.getData().toString()));
                                         for (Node backup : preferenceNodes) {
-                                            backup.sendToStorage(new RequestSystemMsg(AppMsg.OP.PUT, myNode.getIpAddress(), Helper.STORAGE_PORT, myData));
+                                            backup.sendToStorage(new RequestSystemMsg(Msg.OP.PUT, myNode.getIpAddress(), Helper.STORAGE_PORT, myData));
                                         }
                                         break;
                                     case AFTER: //my data version is older than the backup version
                                         LOGGER.info(myNode.getIpAddress() + " - AFTER version: <" + msgReply.getData().getData().getKey() + "> version: " + msgReply.getData().getVersion() + " from " + msgReply.getIpSender());
                                         myData.mergeTo(bkuData);
-                                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " GET " + bkuData.getData().toString()));
+                                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.OK, " GET " + bkuData.getData().toString()));
                                         break;
                                     case CONCURRENT: //concurrent version must be resolved by the client
                                         LOGGER.info(myNode.getIpAddress() + " - CONCURRENT version: <" + msgReply.getData().getData().getKey() + "> version: " + msgReply.getData().getVersion() + " from " + msgReply.getIpSender());
                                         String selection = " 1 : " + myData.getData().toString() + " \n 2 : " + bkuData.getData().toString();
-                                        AppMsg conflict = new RequestConflictMsg(AppMsg.TYPE.REQUEST, AppMsg.OP.GET, myNode.getIpAddress(), Helper.STORAGE_PORT, selection);
+                                        Msg conflict = new RequestConflictMsg(Msg.TYPE.REQUEST, Msg.OP.GET, myNode.getIpAddress(), Helper.STORAGE_PORT, selection);
                                         sendConflict(msg.getIpSender(), conflict, Helper.CONFLICT_LISTEN_PORT);
                                         int sel = waitConflictResponse(Helper.CONFLICT_LISTEN_PORT);
                                         LOGGER.info(myNode.getIpAddress() + " - Received selection " + sel);
                                         switch (sel) {
                                             case (1): //my data is chosen from the client
                                                 for (Node backup : preferenceNodes) {
-                                                    backup.sendToStorage(new RequestSystemMsg(AppMsg.OP.PUT, myNode.getIpAddress(), Helper.STORAGE_PORT, myData));
+                                                    backup.sendToStorage(new RequestSystemMsg(Msg.OP.PUT, myNode.getIpAddress(), Helper.STORAGE_PORT, myData));
                                                 }
-                                                send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " GET " + myData.getData().toString()));
+                                                send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.OK, " GET " + myData.getData().toString()));
                                             case (2): {//backup  is chosen from the client
-                                                sendToMyStorage(new RequestSystemMsg(AppMsg.OP.PUT, myNode.getIpAddress(), Helper.STORAGE_PORT, bkuData));
-                                                send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " GET " + bkuData.getData().toString()));
+                                                sendToMyStorage(new RequestSystemMsg(Msg.OP.PUT, myNode.getIpAddress(), Helper.STORAGE_PORT, bkuData));
+                                                send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.OK, " GET " + bkuData.getData().toString()));
                                             }
                                         }
                                         break;
@@ -352,15 +349,15 @@ public class StorageService extends Thread {
                     }
                 }
                     else {
-                    send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.ERR, " GET key not found"));
+                    send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.ERR, " GET key not found"));
                 }
                 break;
             case LIST: //list command from client
                 if (!storage.isEmpty()) {
-                    send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " LIST " + storage.toString()));
+                    send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.OK, " LIST " + storage.toString()));
                     LOGGER.info(myNode.getIpAddress() + " - Sent LIST of my database to " + msg.getIpSender());
                 } else {
-                    send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.ERR, " LIST: empty database"));
+                    send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.ERR, " LIST: empty database"));
                     LOGGER.info(myNode.getIpAddress() + " - LIST : my database is empty");
                 }
 
@@ -370,16 +367,16 @@ public class StorageService extends Thread {
                 if( storage.remove(keyRm)) {
                     LOGGER.info(myNode.getIpAddress() + " - RM <" + keyRm + "> from local database");
                     for (int i = 0; i < WRITE_NODES; i++) {
-                        RequestSystemMsg msgRemove = new RequestSystemMsg(AppMsg.OP.RM, myNode.getIpAddress(), Helper.STORAGE_PORT, keyRm);
+                        RequestSystemMsg msgRemove = new RequestSystemMsg(Msg.OP.RM, myNode.getIpAddress(), Helper.STORAGE_PORT, keyRm);
                         Node n = preferenceNodes.get(i);
                         n.sendToStorage(msgRemove);
                         LOGGER.info(myNode.getIpAddress() + " -Sent RM to  " + n.getIpAddress());
                     }
-                    send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.OK, " RM removed "));
+                    send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.OK, " RM removed "));
                 }
                 else{
                   LOGGER.info(myNode.getIpAddress() + " - IMPOSSIBLE RM <" + keyRm + "> from local database");
-                 send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(AppMsg.OP.ERR, " Impossbile to remove "));
+                 send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.ERR, " Impossbile to remove "));
                 }
 
         }
@@ -396,12 +393,12 @@ public class StorageService extends Thread {
         }
     }
 
-    public void sendToMyStorage(AppMsg msg) {
+    public void sendToMyStorage(Msg msg) {
         /* send  message to the storage  node */
         this.send(myNode.getIpAddress(), getPortStorage(), msg);
     }
 
-    private void send(String destIp, int destPort, AppMsg msg) {
+    private void send(String destIp, int destPort, Msg msg) {
         try {
             InetAddress address = InetAddress.getByName(destIp);
 
@@ -424,10 +421,10 @@ public class StorageService extends Thread {
     }
 
 
-    public List<ReplySystemMsg> askQuorum(Versioned vData, int listenPort, AppMsg.OP op) {
+    public List<ReplySystemMsg> askQuorum(Versioned vData, int listenPort, Msg.OP op) {
         RequestSystemMsg reqQuorum;
 
-        if (op.equals(AppMsg.OP.PUT))
+        if (op.equals(Msg.OP.PUT))
             reqQuorum = new RequestSystemMsg(op, myNode.getIpAddress(), 0, vData);
         else{ //GET method
             reqQuorum = new RequestSystemMsg(op, myNode.getIpAddress(), 0, vData.getData().getKey());
@@ -455,12 +452,12 @@ public class StorageService extends Thread {
         return _waitQuorum(reqQuorum.getOperation(), listenPort);
     }
 
-    private List<ReplySystemMsg> _waitQuorum(AppMsg.OP op, int listenPort) {
+    private List<ReplySystemMsg> _waitQuorum(Msg.OP op, int listenPort) {
 
         DatagramSocket udpQuorum;  //server listen Quorum selection
 
 
-        int numResponses = (op == AppMsg.OP.PUT) ? WRITE_NODES : READ_NODES;
+        int numResponses = (op == Msg.OP.PUT) ? WRITE_NODES : READ_NODES;
         ArrayList<ReplySystemMsg> replies = new ArrayList<>();
 
         try {
@@ -508,7 +505,7 @@ public class StorageService extends Thread {
     }
 
     // Resole conflict message
-    private void sendConflict(String destIp, AppMsg msg , int listenPort) {
+    private void sendConflict(String destIp, Msg msg , int listenPort) {
         try {
 
             InetAddress address = InetAddress.getByName(destIp);
@@ -584,7 +581,7 @@ public class StorageService extends Thread {
 
         if(nexts.contains(nodeUp) && previous.contains(nodeUp)){
             for (Versioned vdata : storage.getStorage().values()) {
-                RequestSystemMsg msg = new RequestSystemMsg(AppMsg.OP.PUT, myNode.getIpAddress(), myNode.getPortStorage(), vdata);
+                RequestSystemMsg msg = new RequestSystemMsg(Msg.OP.PUT, myNode.getIpAddress(), myNode.getPortStorage(), vdata);
                 LOGGER.info(myNode.getIpAddress() + " - UP node " + nodeUp.getIpAddress() + ", Sent data " + vdata.getData());
                 nodeUp.sendToStorage(msg);
             }

@@ -2,7 +2,6 @@ package com.dido.pad.cli.client;
 
 import com.dido.pad.Helper;
 import com.dido.pad.Node;
-import com.dido.pad.cli.MainClient;
 import com.dido.pad.hashing.DefaultFunctions;
 import com.dido.pad.hashing.Hasher;
 import com.dido.pad.messages.*;
@@ -10,7 +9,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.google.code.gossip.GossipMember;
 import org.apache.log4j.Logger;
-import org.omg.CosNaming.NamingContextPackage.NotFound;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -22,14 +20,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Created by dido-ubuntu on 07/03/16.
  */
-public class ClientService{//} extends Thread {
+public class Cli {
 
 
-    public static final Logger LOGGER = Logger.getLogger(ClientService.class);
-
-    public int N_REPLICAS = 2;  //  include olso the node master ( N=2 , mode master + successive node)
-    public int WRITE_NODES = 1;
-    public int READ_NODES = 2;
+    public static final Logger LOGGER = Logger.getLogger(Cli.class);
 
     private Hasher<Node> cHasher;
 
@@ -38,9 +32,9 @@ public class ClientService{//} extends Thread {
 
     private Client client;
 
-    BufferedReader bufferReader;
+    private BufferedReader bufferReader;
 
-   public ClientService(Client client, List<GossipMember> seedNodes) {
+   public Cli(Client client, List<GossipMember> seedNodes) {
 
         bufferReader = new BufferedReader(new InputStreamReader(System.in));
 
@@ -156,7 +150,7 @@ public class ClientService{//} extends Thread {
 
     private void sendRm(String rmkey) {
         Node n = getcHasher().getServerForData(rmkey);
-        RequestAppMsg msgRm = new RequestAppMsg(AppMsg.OP.RM,rmkey,"");
+        RequestAppMsg msgRm = new RequestAppMsg(Msg.OP.RM,rmkey,"");
         msgRm.setIpSender(client.getIpAddress());
         n.sendToStorage(msgRm);
         LOGGER.info(client.getIpAddress() + "- sent RM  to " + n.getIpAddress());
@@ -167,7 +161,7 @@ public class ClientService{//} extends Thread {
 
         for (Node node:getcHasher().getAllNodes()) {
             if (node.getIpAddress().equals(ip)) {
-                RequestAppMsg msg = new RequestAppMsg<>(AppMsg.OP.PUT, kk, vv);
+                RequestAppMsg msg = new RequestAppMsg<>(Msg.OP.PUT, kk, vv);
                 msg.setIpSender(ip);
                 node.sendToStorage(msg);
                 LOGGER.info(ip + "- sent FORCE to " + node.getIpAddress());
@@ -177,7 +171,7 @@ public class ClientService{//} extends Thread {
     }
 
     private void sendListAndWait(String ip) {
-        RequestAppMsg msg = new RequestAppMsg<>(AppMsg.OP.LIST, "", "");
+        RequestAppMsg msg = new RequestAppMsg<>(Msg.OP.LIST, "", "");
         msg.setIpSender(client.getIpAddress());
 
         try {
@@ -214,7 +208,7 @@ public class ClientService{//} extends Thread {
     private void sendPutAndWait(String key, String value) {
         Node n = getcHasher().getServerForData(key);
         String ip = n.getIpAddress();
-        RequestAppMsg msg = new RequestAppMsg<>(AppMsg.OP.PUT, key, value);
+        RequestAppMsg msg = new RequestAppMsg<>(Msg.OP.PUT, key, value);
         msg.setIpSender(client.getIpAddress());
 
         try {
@@ -253,7 +247,7 @@ public class ClientService{//} extends Thread {
     private void sendGetAndWait(String key)  {
         Node n = getcHasher().getServerForData(key);
         String ip = n.getIpAddress();
-        RequestAppMsg msg = new RequestAppMsg<>(AppMsg.OP.GET, key, "");
+        RequestAppMsg msg = new RequestAppMsg<>(Msg.OP.GET, key, "");
         msg.setIpSender(client.getIpAddress());
 
         try {
@@ -281,7 +275,7 @@ public class ClientService{//} extends Thread {
             String receivedMessage = new String(json_bytes);
 
             ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module());
-            AppMsg msgReceived = mapper.readValue(receivedMessage, AppMsg.class);
+            Msg msgReceived = mapper.readValue(receivedMessage, Msg.class);
             // reply App Message
             if(msgReceived instanceof ReplyAppMsg)
                 manageAppReply((ReplyAppMsg)msgReceived);
@@ -305,7 +299,7 @@ public class ClientService{//} extends Thread {
                 int selection;
                 try {
                     selection = Integer.parseInt(bufferReader.readLine());
-                    ReplyConflictMsg msgRely = new ReplyConflictMsg(AppMsg.TYPE.REPLY, AppMsg.OP.OK, selection);
+                    ReplyConflictMsg msgRely = new ReplyConflictMsg(Msg.TYPE.REPLY, Msg.OP.OK, selection);
                     send(msg.getIpSender(), Helper.CONFLICT_LISTEN_PORT, msgRely);
                     LOGGER.info("SENT selection: " + selection+ " to: " + msg.getIpSender());//on port "+msg.getPortSender() );
                 } catch (IOException e) {
@@ -320,15 +314,15 @@ public class ClientService{//} extends Thread {
     private void manageAppReply(ReplyAppMsg msg) {
         switch (msg.getOperation()) {
             case OK:
-                ClientService.LOGGER.info(client.getIpAddress() + " - REPLY  OK  from " + msg.getIpSender()+" " + msg.getMsg());
+                Cli.LOGGER.info(client.getIpAddress() + " - REPLY  OK  from " + msg.getIpSender()+" " + msg.getMsg());
                 break;
             case ERR:
-                ClientService.LOGGER.info(client.getIpAddress() + " - REPLY  ERR " + msg.getMsg());
+                Cli.LOGGER.info(client.getIpAddress() + " - REPLY  ERR " + msg.getMsg());
                 break;
         }
     }
 
-    protected void send(String destIp, int destPort, AppMsg msg) {
+    protected void send(String destIp, int destPort, Msg msg) {
         try {
 
             InetAddress address = InetAddress.getByName(destIp);
@@ -371,8 +365,8 @@ public class ClientService{//} extends Thread {
 
         if(nexts.contains(nodeUp) && previous.contains(nodeUp)){
             for (Versioned vdata : storage.getStorage().values()) {
-                RequestSystemMsg msg = new RequestSystemMsg(AppMsg.OP.PUT, client.getIpAddress(), ClientHelper.STORAGE_PORT, vdata);
-                ClientService.LOGGER.info(this.client.getIpAddress() + " - UP node " + nodeUp.getIpAddress() + ", Sent data " + vdata.getData());
+                RequestSystemMsg msg = new RequestSystemMsg(Msg.OP.PUT, client.getIpAddress(), ClientHelper.STORAGE_PORT, vdata);
+                Cli.LOGGER.info(this.client.getIpAddress() + " - UP node " + nodeUp.getIpAddress() + ", Sent data " + vdata.getData());
                 nodeUp.sendToStorage(msg);
             }
         }

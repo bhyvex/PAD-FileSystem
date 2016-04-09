@@ -1,6 +1,6 @@
 package com.dido.pad;
 
-import com.dido.pad.messages.AppMsg;
+import com.dido.pad.messages.Msg;
 import com.dido.pad.messages.RequestAppMsg;
 import com.google.code.gossip.GossipMember;
 import com.google.code.gossip.GossipSettings;
@@ -52,7 +52,7 @@ public class TestQuorum {
            }
 
            String key = "Davide";
-           AppMsg req = new RequestAppMsg<>(AppMsg.OP.PUT, key, "Neri");
+           Msg req = new RequestAppMsg<>(Msg.OP.PUT, key, "Neri");
            req.setIpSender("127.0.0.3");
            clients.get(2).sendToStorage(req);
 
@@ -63,7 +63,7 @@ public class TestQuorum {
 
            String newValue = "Giangrande";
            //update version with a PUT into backup node (127.0.0.1)
-           AppMsg reqUpdate1 = new RequestAppMsg<>(AppMsg.OP.PUT, key, newValue);
+           Msg reqUpdate1 = new RequestAppMsg<>(Msg.OP.PUT, key, newValue);
            clients.get(0).sendToStorage(reqUpdate1);
            Thread.sleep(1000);
            //check if backup has received the new value
@@ -71,7 +71,7 @@ public class TestQuorum {
 
            Thread.sleep(1000);
 
-           AppMsg reqGet = new RequestAppMsg<>(AppMsg.OP.GET, key, "");
+           Msg reqGet = new RequestAppMsg<>(Msg.OP.GET, key, "");
            clients.get(2).sendToStorage(reqGet);
 
            Thread.sleep(3000);

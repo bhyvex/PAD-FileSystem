@@ -17,7 +17,7 @@ public class ParseArgs {
 
     // main -ip ipAddress m1:gp:id m2:gp:id
 
-    @Parameter(description = "ipGossipMember:id[:gp]")
+    @Parameter(description = "ipSeed:id[:gp] [ipSeed:id[:gp]")
     private List<String> gossipMember = new ArrayList<>();
 
     @Parameter(names="--help", help=true, description=" Show this help message")
@@ -41,11 +41,11 @@ public class ParseArgs {
         for (String m : gossipMember) {
                 String ip,id;
                 int portGossip;
-                String [] att = m.split(":");
+                String [] att = m.split(":"); // seedIP:id[:portgossip]
                 if(att.length ==2) {
                     ip = att[0];
                     portGossip = Helper.GOSSIP_PORT;
-                    id = att[0];
+                    id = att[1];
                 } else{
                     ip = att[0];
                     portGossip = Integer.parseInt(att[1]);

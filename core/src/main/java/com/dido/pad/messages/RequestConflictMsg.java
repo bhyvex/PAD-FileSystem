@@ -3,7 +3,7 @@ package com.dido.pad.messages;
 /**
  * Created by dido-ubuntu on 24/03/16.
  */
-public class RequestConflictMsg extends AppMsg {
+public class RequestConflictMsg extends Msg {
 
     String selection;
 

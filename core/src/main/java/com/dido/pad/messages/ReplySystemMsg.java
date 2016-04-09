@@ -5,7 +5,7 @@ import com.dido.pad.data.Versioned;
 /**
  * Created by dido-ubuntu on 16/03/16.
  */
-public class ReplySystemMsg extends AppMsg {
+public class ReplySystemMsg extends Msg {
 
     private Versioned data;
     private String msg; //error message

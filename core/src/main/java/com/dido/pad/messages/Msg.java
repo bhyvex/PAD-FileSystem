@@ -27,7 +27,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 }
 )
 
-public class AppMsg {
+public class Msg {
 
     public enum TYPE {REQUEST, REPLY}
     public enum OP {PUT, GET, LIST, OK, ERR, DSCV ,RM}  //DSCV = discovering for client request of gossipMembers in a SystemMsg
@@ -37,17 +37,17 @@ public class AppMsg {
     private String ipSender;
     private int portSender;
 
-    public AppMsg(TYPE type, OP operation, String ipSender, int portSender) {
+    public Msg(TYPE type, OP operation, String ipSender, int portSender) {
         this.type = type;
         this.operation = operation;
         this.ipSender = ipSender;
         this.portSender = portSender;
     }
-    public AppMsg(TYPE type, OP operation){
+    public Msg(TYPE type, OP operation){
         this.type = type;
         this.operation = operation;
     }
-    public AppMsg() {
+    public Msg() {
 
     }
 

@@ -3,7 +3,7 @@ package com.dido.pad.messages;
 /**
  * Created by dido-ubuntu on 11/03/16.
  */
-public class ReplyAppMsg extends AppMsg {
+public class ReplyAppMsg extends Msg {
     public String msg;
 
     public ReplyAppMsg(String msg) {

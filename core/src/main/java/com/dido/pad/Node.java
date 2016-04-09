@@ -1,6 +1,6 @@
 package com.dido.pad;
 
-import com.dido.pad.messages.AppMsg;
+import com.dido.pad.messages.Msg;
 import com.google.code.gossip.*;
 import com.google.code.gossip.event.GossipState;
 import com.google.code.gossip.manager.GossipManager;
@@ -116,7 +116,7 @@ public class Node {
             _storageService.shutdown();
     }
 
-    public void sendToStorage(AppMsg msg){
+    public void sendToStorage(Msg msg){
         _storageService.sendToMyStorage(msg);
     }
 

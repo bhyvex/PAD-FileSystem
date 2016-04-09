@@ -3,7 +3,7 @@ package com.dido.pad.messages;
 /**
  * Created by dido-ubuntu on 10/03/16.
  */
-public class RequestAppMsg<T> extends AppMsg{
+public class RequestAppMsg<T> extends Msg {
 
     private String key;
     private T value;

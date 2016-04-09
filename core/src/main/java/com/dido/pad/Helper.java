@@ -1,6 +1,6 @@
 package com.dido.pad;
 
-import com.dido.pad.messages.AppMsg;
+import com.dido.pad.messages.Msg;
 import com.dido.pad.messages.RequestClientMsg;
 import com.dido.pad.messages.RequestSystemMsg;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -52,7 +52,7 @@ public class Helper {
         return buf;
     }
 
-    public static byte[] fromAppMsgtoByte(AppMsg msg) {
+    public static byte[] fromAppMsgtoByte(Msg msg) {
         ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module());
         byte[] jsonByte = new byte[0];
         try {

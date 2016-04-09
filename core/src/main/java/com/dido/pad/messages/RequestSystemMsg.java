@@ -5,7 +5,7 @@ import com.dido.pad.data.Versioned;
 /**
  * Created by dido-ubuntu on 15/03/16.
  */
-public class RequestSystemMsg extends AppMsg {
+public class RequestSystemMsg extends Msg {
 
     private Versioned data;
     private String key;  // OP.GET: contain possible error message, OP.RM : contain the key to remove,
