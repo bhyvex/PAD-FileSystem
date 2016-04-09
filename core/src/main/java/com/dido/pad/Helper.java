@@ -25,7 +25,7 @@ public class Helper {
     public static final int NUM_NODES_VIRTUALS = 3;  //number of nodes + virtulas nodes, (1 means onlyl physical node)
 
 
-    public static final boolean CLEAR_DATABASE_INTO_NODE = true; //clear all the databases of the node if true
+    public static final boolean CLEAR_DATABASE_INTO_NODE = false; //clear all the databases of the node if true
 
 
     public static byte[] fromClientMsgtoByte(RequestClientMsg reqNodes) {

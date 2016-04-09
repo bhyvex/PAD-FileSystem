@@ -354,7 +354,7 @@ public class Cli {
             random = rand.nextInt(nodes.size());
         }
         else {
-            throw  new IllegalArgumentException("The list of nodes is empty");
+            throw  new IllegalArgumentException("NO nodes  in the system");
         }
         return nodes.get(random);
     }

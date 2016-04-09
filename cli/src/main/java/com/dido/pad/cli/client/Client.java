@@ -95,8 +95,7 @@ public class Client {
                 Thread.sleep(interval);
 
             } catch (InterruptedException | IOException e) {
-                    e.printStackTrace();
-                    //clientSocket.close();
+                LOGGER.error(ip + " - "+e.getMessage());
             }
         }
         clientSocket.close();
@@ -140,9 +139,9 @@ public class Client {
             }
 
         } catch (SocketException e) {
-            LOGGER.info(ip + " - " + e);
+            LOGGER.error(ip + " - " + e);
         } catch (IOException e) {
-            LOGGER.info(ip + " - "+e);
+            LOGGER.error(ip + " - "+e);
         }
         return nodesReceived;
     }

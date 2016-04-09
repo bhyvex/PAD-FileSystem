@@ -25,9 +25,9 @@ public class StorageService extends Thread {
 
     public static final Logger LOGGER = Logger.getLogger(StorageService.class);
 
-    public int N_REPLICAS = 1;   //  the length of preference list: the backups node after the master in clockwise direction
+    public int N_REPLICAS = 2;   //  the length of preference list: the backups node after the master in clockwise direction
     public int WRITE_NODES = 1;  // number of nodes after the master tha must return a write response
-    public int READ_NODES = 1;   // number of nodes that must read that must return a read response
+    public int READ_NODES = 2;   // number of nodes that must read that must return a read response
 
     private Hasher<Node> cHasher;
     private PersistentStorage storage;
@@ -269,14 +269,13 @@ public class StorageService extends Thread {
                     d.setData(new StorageData<>(msg.getKey(), msg.getValue()));
                     d.getVersion().increment(myNode.getId());
                     storage.update(d);
-                    send(msg.getIpSender(),Helper.STORAGE_PORT,new ReplyAppMsg(Msg.OP.OK, " UPDATE <" + msg.getKey()+":"+msg.getValue()+"> "+d.getVersion()));
-
+                  //  send(msg.getIpSender(),Helper.STORAGE_PORT,new ReplyAppMsg(Msg.OP.OK, " UPDATE <" + msg.getKey()+":"+msg.getValue()+"> "+d.getVersion()));
                     //sent to all WRITE_NODES
                     List<ReplySystemMsg> rep = askQuorum(d, Helper.QUORUM_PORT, Msg.OP.PUT);
                     if(rep.size() < WRITE_NODES)
                         send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.ERR, " Error: PUT not all the WRITE NODES  have responded"));
                     else
-                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.OK, " PUT  <" + msg.getKey() + ":" + msg.getValue() + ">"));
+                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.OK, " UPDATE  <" + msg.getKey() + ":" + msg.getValue() + ">"));
 
                 } else { // PUT new object
                     Versioned vData = new Versioned(new StorageData<>(msg.getKey(), msg.getValue()));
