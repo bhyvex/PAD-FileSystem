@@ -33,10 +33,10 @@ public class TestHasher {
     @Before
     public void setUp(){
         hasher= new Hasher<>(1, DefaultFunctions::SHA1, DefaultFunctions::BytesConverter);
-         n1 = new Node("127.0.0.1","id1");//, Helper.STORAGE_PORT, Helper.GOSSIP_PORT, startNodes);
-         n2 = new Node("127.0.0.2","id2");//, Helper.STORAGE_PORT, Helper.GOSSIP_PORT, startNodes);
-         n3 = new Node("127.0.0.3","id3");//, Helper.STORAGE_PORT, Helper.GOSSIP_PORT, startNodes);
-         n4 = new Node("127.0.0.4","id4");//, Helper.STORAGE_PORT, Helper.GOSSIP_PORT, startNodes);
+         n1 = new Node("127.0.0.1","node1");//, Helper.STORAGE_PORT, Helper.GOSSIP_PORT, startNodes);
+         n2 = new Node("127.0.0.2","node2");//, Helper.STORAGE_PORT, Helper.GOSSIP_PORT, startNodes);
+         n3 = new Node("127.0.0.3","node3");//, Helper.STORAGE_PORT, Helper.GOSSIP_PORT, startNodes);
+         n4 = new Node("127.0.0.4","node4");//, Helper.STORAGE_PORT, Helper.GOSSIP_PORT, startNodes);
     }
 
     @Test
@@ -73,11 +73,11 @@ public class TestHasher {
 
         StorageData d = new StorageData("pad","filesystem");
         Node n = hasher.getServerForData(d.getKey());
-        Assert.assertEquals(n,n4);
+        Assert.assertEquals(n3,n);
 
         StorageData d2 = new StorageData("dynamo","filesystem");
         Node node = hasher.getServerForData(d2.getKey());
-        Assert.assertEquals(node,n1);
+        Assert.assertEquals(n4,node);
     }
 
     @Test
@@ -93,17 +93,20 @@ public class TestHasher {
 
         StorageData d = new StorageData("pad","filesystem");
         Node node = hasher.getServerForData(d.getKey());
-        Assert.assertEquals(node,n1);
+        Assert.assertEquals(n2,node);
 
 
         StorageData d1 = new StorageData("dynamo","filesystem");
         Node node1 = hasher.getServerForData(d1 .getKey());
-        Assert.assertEquals(node1,n2);
+        Assert.assertEquals(n2,node1);
 
     }
 
     @Test
     public void testRemoveAddServers(){
+        int virtualNodes = 3;
+        // Three virtual nodes
+        Hasher<Node> hasher = new Hasher<>(virtualNodes,DefaultFunctions::SHA1, DefaultFunctions::BytesConverter);
         hasher.addServer(n1);
         hasher.addServer(n2);
         hasher.addServer(n3);
@@ -111,23 +114,23 @@ public class TestHasher {
 
         StorageData d = new StorageData("pad","filesystem");
         Node node = hasher.getServerForData(d.getKey());
-        Assert.assertEquals(node,n4);
+        Assert.assertEquals(n2,node);
 
-        hasher.removeServer(n4);
+        hasher.removeServer(n2);
 
         Node newNode = hasher.getServerForData(d.getKey());
-        Assert.assertEquals(newNode,n2);
+        Assert.assertEquals(n4,newNode);
 
-        hasher.addServer(n4);
+        hasher.addServer(n2);
         Node addNode = hasher.getServerForData(d.getKey());
-        Assert.assertEquals(addNode,n4);
+        Assert.assertEquals(n2,addNode);
 
 
     }
 
     @Test
     public void testNextPreviousServer(){
-        int virtualNodes = 3;
+        int virtualNodes = 1;
         hasher= new Hasher<>(virtualNodes, DefaultFunctions::SHA1, DefaultFunctions::BytesConverter);
 
         hasher.addServer(n1);
@@ -135,11 +138,11 @@ public class TestHasher {
         hasher.addServer(n3);
         hasher.addServer(n4);
 
-        Assert.assertEquals(hasher.getNextServers(n1,1).get(0), n4);
-        Assert.assertEquals(hasher.getPreviousServer(n1,1).get(0),n2);
+        Assert.assertEquals(hasher.getNextServers(n1,1).get(0), n2);
+        Assert.assertEquals(hasher.getPreviousServer(n1,1).get(0),n3);
 
         Assert.assertEquals(hasher.getNextServers(n4,1).get(0), n2); //n4 is last node, n2 is the first
-        Assert.assertEquals(hasher.getPreviousServer(n2,1).get(0), n4); //n2 is the first key, previous is n4
+        Assert.assertEquals(hasher.getPreviousServer(n2,1).get(0), n1); //n2 is the first key, previous is n4
 
     }
 

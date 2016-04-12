@@ -71,10 +71,11 @@ public class StorageService extends Thread {
         }
 
     }
-
+/*
     public List<Node> getReplicasNodes(Node server, int replicas) {
         return cHasher.getNextServers(server, replicas);
     }
+    */
 
     public PersistentStorage getStorage() {
         return storage;
@@ -375,7 +376,7 @@ public class StorageService extends Thread {
                 }
                 else{
                   LOGGER.info(myNode.getIpAddress() + " - IMPOSSIBLE RM <" + keyRm + "> from local database");
-                 send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.ERR, " Impossbile to remove "));
+                 send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.ERR, " Impossible to remove "));
                 }
 
         }

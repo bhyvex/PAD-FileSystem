@@ -46,7 +46,7 @@ public class Hasher<T> implements IHasher<T> {
             serversMap.put(virtBucket, server);
             virtBuckets.add(virtBucket);
         }
-        virtualForServer.put(server, virtBuckets);
+        virtualForServer.put(server, virtBuckets); //first entry is the bytebuffer of the server itself.
     }
 
     @Override
@@ -62,7 +62,6 @@ public class Hasher<T> implements IHasher<T> {
 
 
     private ByteBuffer convertAndApplyHash(int nodeID, T server) {
-
         byte[] bucketNameInBytes = hashFunction.hash(nodeToByteConverter.convert(server));
         byte[] bucketNameAndCode = new byte[(Integer.BYTES / Byte.BYTES) + bucketNameInBytes.length];
         ByteBuffer bb = ByteBuffer.wrap(bucketNameAndCode);
@@ -77,11 +76,9 @@ public class Hasher<T> implements IHasher<T> {
         ByteBuffer bbData = ByteBuffer.wrap(bHashData);
         ByteBuffer nearServer = serversMap.ceilingKey(bbData);
         if (nearServer == null) {
-            T server = serversMap.firstEntry().getValue();
-            return server;
+            return serversMap.firstEntry().getValue();
         } else {
-            T server = serversMap.get(nearServer);
-            return server;
+            return serversMap.get(nearServer);
         }
     }
 
@@ -107,6 +104,12 @@ public class Hasher<T> implements IHasher<T> {
         return serversMap;
     }
 
+    /**
+     * Get next physical servers associated with next virtaul nodes.
+     * @param server starting node server
+     * @param number nnumber of successive server to be found
+     * @return
+     */
     public ArrayList<T> getNextServers(T server, int number) {
         Preconditions.checkArgument(number <= virtualForServer.keySet().size(), "The number of node present is less than the preference list size required");
 

@@ -104,6 +104,7 @@ public class Cli {
         while(true){
 
             System.out.print("\n>> ");
+            //LOGGER.info("\n>>");
             String input = null;
             try {
                 input = bufferReader.readLine();
@@ -217,7 +218,7 @@ public class Cli {
             byte[] buf = Helper.fromAppMsgtoByte(msg);
             DatagramPacket packet = new DatagramPacket(buf, buf.length, address, Helper.STORAGE_PORT);
             udpServer.send(packet);
-            LOGGER.debug(client.getIpAddress() + "- Sent PUT to: " + n.getIpAddress());
+            LOGGER.info(client.getIpAddress() + "- Sent PUT to: " + n.getIpAddress());
 
             byte[] buff = new byte[udpServer.getReceiveBufferSize()];
             DatagramPacket p = new DatagramPacket(buff, buff.length);
@@ -314,10 +315,10 @@ public class Cli {
     private void manageAppReply(ReplyAppMsg msg) {
         switch (msg.getOperation()) {
             case OK:
-                Cli.LOGGER.info(client.getIpAddress() + " - REPLY  OK  from " + msg.getIpSender()+" " + msg.getMsg());
+                LOGGER.info(client.getIpAddress() + " - REPLY  OK  from " + msg.getIpSender()+" " + msg.getMsg());
                 break;
             case ERR:
-                Cli.LOGGER.info(client.getIpAddress() + " - REPLY  ERR " + msg.getMsg());
+                LOGGER.info(client.getIpAddress() + " - REPLY  ERR " + msg.getMsg());
                 break;
         }
     }
