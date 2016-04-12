@@ -14,60 +14,40 @@ public class Hasher<T> implements IHasher<T> {
 
 //    public static final Logger LOGGER = Logger.getLogger(Hasher.class);
 
-    private final int startVirtualNodeId, stopVirtualNodeId;
     private final IHashFunction hashFunction;
     private final IByteConverter<T> nodeToByteConverter;
 
     private final NavigableMap<ByteBuffer, T> serversMap;
-    private HashMap<T, ArrayList<ByteBuffer>> virtualForServer; // <Node :list< vitualNodes>> :for each Node list its virtual nodes
 
-
-    public Hasher(final int virtulaNodes, final IHashFunction hash, final IByteConverter<T> nodetoByteConverter) {
-
+    public Hasher(final IHashFunction hash, final IByteConverter<T> nodetoByteConverter) {
         Preconditions.checkNotNull(hash, "HashFunction can not be null.");
 
         this.hashFunction = hash;
         this.nodeToByteConverter = nodetoByteConverter;
 
-        this.startVirtualNodeId = 1;
-        this.stopVirtualNodeId = (virtulaNodes > 0) ? virtulaNodes : 1;
-
-        this.serversMap = new ConcurrentSkipListMap<ByteBuffer, T>();
-        this.virtualForServer = new HashMap<>();
+        this.serversMap = new ConcurrentSkipListMap<>();
 
     }
 
     @Override
     synchronized public void addServer(T server) {
         Preconditions.checkNotNull(server, "Server name can not be null");
-        ArrayList<ByteBuffer> virtBuckets = new ArrayList<>();
-        for (int virtualNodeId = startVirtualNodeId; virtualNodeId <= stopVirtualNodeId; virtualNodeId++) {
-            ByteBuffer virtBucket = convertAndApplyHash(virtualNodeId, server);
-            serversMap.put(virtBucket, server);
-            virtBuckets.add(virtBucket);
-        }
-        virtualForServer.put(server, virtBuckets); //first entry is the bytebuffer of the server itself.
+
+        ByteBuffer virtBucket = convertAndApplyHash(server);
+        serversMap.put(virtBucket, server);
     }
 
     @Override
     synchronized public void removeServer(T server) {
         Preconditions.checkNotNull(server, "Server name can not be null");
-        for (int virtID = startVirtualNodeId; virtID <= stopVirtualNodeId; virtID++) {
-            ByteBuffer bbServerVirtuals = convertAndApplyHash(virtID, server);
-            serversMap.remove(bbServerVirtuals);
-        }
-        virtualForServer.remove(server);
-
+        ByteBuffer bbServerVirtuals = convertAndApplyHash(server);
+        serversMap.remove(bbServerVirtuals);
     }
 
 
-    private ByteBuffer convertAndApplyHash(int nodeID, T server) {
+    private ByteBuffer convertAndApplyHash(T server) {
         byte[] bucketNameInBytes = hashFunction.hash(nodeToByteConverter.convert(server));
-        byte[] bucketNameAndCode = new byte[(Integer.BYTES / Byte.BYTES) + bucketNameInBytes.length];
-        ByteBuffer bb = ByteBuffer.wrap(bucketNameAndCode);
-        bb.put(bucketNameInBytes);
-        bb.putInt(nodeID);
-        return ByteBuffer.wrap(hashFunction.hash(bucketNameAndCode));
+        return ByteBuffer.wrap(hashFunction.hash(bucketNameInBytes));
     }
 
 
@@ -82,14 +62,12 @@ public class Hasher<T> implements IHasher<T> {
         }
     }
 
-    public ArrayList<T> getAllNodes() {
-        ArrayList<T> nodes = new ArrayList<>();
-        nodes.addAll(virtualForServer.keySet());
-        return nodes;
+    synchronized  public ArrayList<T> getAllNodes() {
+        return  new ArrayList<>(serversMap.values());
     }
 
     public boolean containsNode(T node) {
-        ByteBuffer bbServerVirtuals = convertAndApplyHash(startVirtualNodeId, node);
+        ByteBuffer bbServerVirtuals = convertAndApplyHash(node);
         return this.serversMap.containsKey(bbServerVirtuals);
     }
 
@@ -105,27 +83,27 @@ public class Hasher<T> implements IHasher<T> {
     }
 
     /**
-     * Get next physical servers associated with next virtaul nodes.
+     * Get next physical servers associated after.
      * @param server starting node server
-     * @param number nnumber of successive server to be found
-     * @return
+     * @return list of Nodes
      */
     public ArrayList<T> getNextServers(T server, int number) {
-        Preconditions.checkArgument(number <= virtualForServer.keySet().size(), "The number of node present is less than the preference list size required");
+        Preconditions.checkArgument(number > 0 , "number of next servers cannot be negative");
 
-        ArrayList<ByteBuffer> virtuals = virtualForServer.get(server);
-
-        ByteBuffer bbNext = virtuals.get(0);     // first entry is the Bytebuffer of the first physical server.
+        ByteBuffer bbNext= convertAndApplyHash(server);
         ArrayList<T> nexts = new ArrayList<>();
-
-        while (number > 0) {
-            bbNext = serversMap.higherKey(bbNext);
-            if (bbNext == null) { // there is no they greater than the server key.
-                bbNext = serversMap.firstKey();
-            }
-            if (!virtuals.contains(bbNext) && !nexts.contains(serversMap.get(bbNext))) {
-                nexts.add(serversMap.get(bbNext));
-                number--;
+        if(serversMap.containsKey(bbNext)) { // contains the bytebuffer of the server passes as argument
+            while (number > 0) {
+                bbNext = serversMap.higherKey(bbNext);
+                if (bbNext == null && bbNext !=convertAndApplyHash(server)) { // there is no they greater than the server key.
+                    bbNext = serversMap.firstKey();
+                    nexts.add(serversMap.get(bbNext));
+                    number--;
+                }
+                else if (!nexts.contains(serversMap.get(bbNext) )) {
+                    nexts.add(serversMap.get(bbNext));
+                    number--;
+                }
             }
         }
         return nexts;
@@ -133,19 +111,21 @@ public class Hasher<T> implements IHasher<T> {
 
 
     public ArrayList<T> getPreviousServer(T server, int number){
-        ArrayList<ByteBuffer> virtuals = virtualForServer.get(server);
+       // ArrayList<ByteBuffer> virtuals = virtualForServer.get(server);
 
-        ByteBuffer bbPrevious = virtuals.get(0);     // first entry is the Bytebuffer of the  physical server.
+        ByteBuffer bbPrevious = convertAndApplyHash(server);     // first entry is the Bytebuffer of the  physical server.
         ArrayList<T> privious = new ArrayList<>();
 
-        while (number > 0) {
-            bbPrevious = serversMap.lowerKey(bbPrevious);
-            if (bbPrevious == null) { // there is no they less than the server key.
-                bbPrevious = serversMap.lastKey();
-            }
-            if (!virtuals.contains(bbPrevious) && !privious.contains(serversMap.get(bbPrevious))) {
-                privious.add(serversMap.get(bbPrevious));
-                number--;
+        if(serversMap.containsKey(bbPrevious)) {
+            while (number > 0) {
+                bbPrevious = serversMap.lowerKey(bbPrevious);
+                if (bbPrevious == null) { // there is no they less than the server key.
+                    bbPrevious = serversMap.lastKey();
+                }
+                if ( !privious.contains(serversMap.get(bbPrevious))) {
+                    privious.add(serversMap.get(bbPrevious));
+                    number--;
+                }
             }
         }
         return privious;

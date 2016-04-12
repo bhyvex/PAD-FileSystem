@@ -24,22 +24,19 @@ public class AppRunner {
     public static void main(String[] args) throws IOException, InterruptedException {
         //startup gossip member
         GossipSettings settings = new GossipSettings();
-        int seedNodes = 1;
+        int seedNodes = 2;
         List<GossipMember> startupMembers = new ArrayList<>();
         for (int i = 1; i < seedNodes + 1; ++i) {
             startupMembers.add(new RemoteGossipMember("127.0.0." + i, Helper.GOSSIP_PORT, "node" + i));
         }
 
         //create three local client
-        //List<Node> clients = new ArrayList<>();
         HashMap<String,Node> clients = new HashMap<>();
         int clusterMembers = 4;
         for (int i = 1; i < clusterMembers + 1; ++i) {
             String ip = "127.0.0." + i;
-            //if(i!=3){
                 Node node = new Node(ip, "node" + i, Helper.STORAGE_PORT, Helper.GOSSIP_PORT, startupMembers, settings);
                 clients.put(ip, node);
-            //}
 
         }
 
@@ -49,7 +46,9 @@ public class AppRunner {
 
         BufferedReader bufferReader = new BufferedReader(new InputStreamReader(System.in));
 
-        String help = " usage: \n down nodeIp \n up nodeIP \n list ";
+        String help = " usage: \n " +
+                "down ip  : the node with ip  goes down \n" +
+                "up  x : the node with ip (127.0.0.x) goes up ";
 
         while(true) {
             System.out.println("\n Insert a command [h for usage message]...");

@@ -32,7 +32,8 @@ public class TestHasher {
      */
     @Before
     public void setUp(){
-        hasher= new Hasher<>(1, DefaultFunctions::SHA1, DefaultFunctions::BytesConverter);
+
+        hasher= new Hasher<>(DefaultFunctions::SHA1, DefaultFunctions::BytesConverter);
          n1 = new Node("127.0.0.1","node1");//, Helper.STORAGE_PORT, Helper.GOSSIP_PORT, startNodes);
          n2 = new Node("127.0.0.2","node2");//, Helper.STORAGE_PORT, Helper.GOSSIP_PORT, startNodes);
          n3 = new Node("127.0.0.3","node3");//, Helper.STORAGE_PORT, Helper.GOSSIP_PORT, startNodes);
@@ -56,7 +57,6 @@ public class TestHasher {
 
     @Test
     public void testOneServer(){
-        //hasher= new Hasher<>(1, DefaultFunctions::SHA1, DefaultFunctions::BytesConverter);
         hasher.addServer(n1);
         StorageData d = new StorageData<>("AAAA","first data");
         StorageData d2 = new StorageData<>("ZZZZ","second data");
@@ -71,78 +71,72 @@ public class TestHasher {
         hasher.addServer(n3);
         hasher.addServer(n4);
 
-        StorageData d = new StorageData("pad","filesystem");
+        StorageData d = new StorageData<>("pad","filesystem");
         Node n = hasher.getServerForData(d.getKey());
         Assert.assertEquals(n3,n);
 
-        StorageData d2 = new StorageData("dynamo","filesystem");
+        StorageData d2 = new StorageData<>("dynamo","filesystem");
         Node node = hasher.getServerForData(d2.getKey());
-        Assert.assertEquals(n4,node);
-    }
-
-    @Test
-    public void testMoreVirtualServer(){
-        int virtualNodes = 3;
-        // Three virtual nodes
-        Hasher<Node> hasher = new Hasher<>(virtualNodes,DefaultFunctions::SHA1, DefaultFunctions::BytesConverter);
-
-        hasher.addServer(n1);
-        hasher.addServer(n2);
-        hasher.addServer(n3);
-        hasher.addServer(n4);
-
-        StorageData d = new StorageData("pad","filesystem");
-        Node node = hasher.getServerForData(d.getKey());
         Assert.assertEquals(n2,node);
-
-
-        StorageData d1 = new StorageData("dynamo","filesystem");
-        Node node1 = hasher.getServerForData(d1 .getKey());
-        Assert.assertEquals(n2,node1);
-
     }
+
 
     @Test
     public void testRemoveAddServers(){
-        int virtualNodes = 3;
-        // Three virtual nodes
-        Hasher<Node> hasher = new Hasher<>(virtualNodes,DefaultFunctions::SHA1, DefaultFunctions::BytesConverter);
+
+
+        Hasher<Node> hasher = new Hasher<>(DefaultFunctions::SHA1, DefaultFunctions::BytesConverter);
         hasher.addServer(n1);
         hasher.addServer(n2);
         hasher.addServer(n3);
         hasher.addServer(n4);
 
-        StorageData d = new StorageData("pad","filesystem");
+        StorageData d = new StorageData<>("dido","filesystem");
         Node node = hasher.getServerForData(d.getKey());
-        Assert.assertEquals(n2,node);
+        Assert.assertEquals(n3,node);
 
-        hasher.removeServer(n2);
+        hasher.removeServer(n3);
 
         Node newNode = hasher.getServerForData(d.getKey());
         Assert.assertEquals(n4,newNode);
 
-        hasher.addServer(n2);
+        hasher.addServer(n3);
         Node addNode = hasher.getServerForData(d.getKey());
-        Assert.assertEquals(n2,addNode);
+        Assert.assertEquals(n3,addNode);
 
 
     }
 
     @Test
     public void testNextPreviousServer(){
-        int virtualNodes = 1;
-        hasher= new Hasher<>(virtualNodes, DefaultFunctions::SHA1, DefaultFunctions::BytesConverter);
+        hasher= new Hasher<>(DefaultFunctions::SHA1, DefaultFunctions::BytesConverter);
 
         hasher.addServer(n1);
         hasher.addServer(n2);
         hasher.addServer(n3);
         hasher.addServer(n4);
 
-        Assert.assertEquals(hasher.getNextServers(n1,1).get(0), n2);
-        Assert.assertEquals(hasher.getPreviousServer(n1,1).get(0),n3);
+        Assert.assertEquals(hasher.getNextServers(n1,1).get(0),n3);
+        Assert.assertEquals(hasher.getNextServers(n2,1).get(0),n1);
 
-        Assert.assertEquals(hasher.getNextServers(n4,1).get(0), n2); //n4 is last node, n2 is the first
-        Assert.assertEquals(hasher.getPreviousServer(n2,1).get(0), n1); //n2 is the first key, previous is n4
+        Assert.assertEquals(hasher.getNextServers(n3,1).get(0),n4);
+        List<Node> nexts = hasher.getNextServers(n3,2);
+
+        Assert.assertEquals(hasher.getNextServers(n4,1).get(0),n2);
+
+        String key = "dido";
+        Node n =hasher.getServerForData(key);
+
+        hasher.removeServer(n3);
+
+        Node node1 = hasher.getServerForData(key);
+
+        hasher.addServer(n3);
+
+        Assert.assertEquals(hasher.getPreviousServer(n2,1).get(0),n4);
+
+        Assert.assertEquals(hasher.getNextServers(n1,1).get(0), n3); //n4 is last node, n2 is the first
+        Assert.assertEquals(hasher.getPreviousServer(n3,1).get(0), n1); //n2 is the first key, previous is n4
 
     }
 

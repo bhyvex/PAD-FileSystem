@@ -45,7 +45,7 @@ public class StorageService extends Thread {
 
     public StorageService(Node node, List<GossipMember> seedNodes) {
 
-        this.cHasher = new Hasher<>(Helper.NUM_NODES_VIRTUALS, DefaultFunctions::SHA1, DefaultFunctions::BytesConverter);
+        this.cHasher = new Hasher<>( DefaultFunctions::SHA1, DefaultFunctions::BytesConverter);
         this.myNode = node;
 
         storage = new PersistentStorage(myNode.getId(),Helper.CLEAR_DATABASE_INTO_NODE);
@@ -105,27 +105,28 @@ public class StorageService extends Thread {
 
     @Override
     public void run() {
+/*        // problem if the system is  up: takes as next the first nodes the goes up.
         while (N_REPLICAS > cHasher.getAllNodes().size()) {
-            StorageService.LOGGER.info(this.myNode.getIpAddress() + " -  Required " + N_REPLICAS + " backup node, found " + cHasher.getAllNodes().size());
+            StorageService.LOGGER.info(myNode.getIpAddress() + " -  Required " + N_REPLICAS + " backup nodes, found " + cHasher.getAllNodes().size());
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
-        preferenceNodes = cHasher.getNextServers(myNode, N_REPLICAS);
+        preferenceNodes = cHasher.getNextServers(myNode, N_REPLICAS);*/
 
         while (keepRunning.get()) {
-           /* while (N_REPLICAS > cHasher.getAllNodes().size()) {
-                StorageService.LOGGER.info(this.myNode.getIpAddress() + " -  Required " + N_REPLICAS + " backup node, found " + cHasher.getAllNodes().size());
+            // problem if the system is  up: takes as next the first nodes the goes up.
+            while (N_REPLICAS > cHasher.getAllNodes().size()) {
+                StorageService.LOGGER.info(myNode.getIpAddress() + " -  Required " + N_REPLICAS + " backup nodes, found " + cHasher.getAllNodes().size());
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-            }*/
-
-           // preferenceNodes = cHasher.getNextServers(myNode, N_REPLICAS);
+            }
+            preferenceNodes = cHasher.getNextServers(myNode, N_REPLICAS);
 
             try {
                 byte[] buff = new byte[udpServer.getReceiveBufferSize()];
@@ -247,10 +248,10 @@ public class StorageService extends Thread {
             case RM:
                 String keyRm = msg.getKey();
                 if(storage.remove(keyRm)){
-                    LOGGER.info(myNode.getIpAddress() + " - Removed  <"+keyRm+" >from local database");
+                    LOGGER.info(myNode.getIpAddress() + " - Removed  <"+keyRm+" > from local database");
                 }
                 else{
-                    LOGGER.info(myNode.getIpAddress() + " - Impossible to remove  <"+keyRm+" from local database");
+                    LOGGER.info(myNode.getIpAddress() + " - Impossible to remove  <"+keyRm+" >from local database");
                 }
         }
     }
@@ -300,8 +301,8 @@ public class StorageService extends Thread {
                     List<ReplySystemMsg> replies = askQuorum(myData,Helper.QUORUM_PORT, Msg.OP.GET);
 
                     if(replies.isEmpty() || replies.size() < READ_NODES) {
-                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.ERR, " Error: GET has note received version from all the backups"));
-                        StorageService.LOGGER.info(myNode.getIpAddress() + " - ERR  has not received all the backup nodes version to"+msg.getIpSender());
+                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.ERR, " Error: GET has note received version from all the READ nodes"));
+                        StorageService.LOGGER.info(myNode.getIpAddress() + " - ERR  has not received all the READ nodes version to"+msg.getIpSender());
                     }
 
                     else {
@@ -310,7 +311,7 @@ public class StorageService extends Thread {
                                 Versioned bkuData = msgReply.getData();
                                 switch (bkuData.compareTo(myData)) {
                                     case BEFORE: //my data version is newer than the backup version
-                                        LOGGER.info(myNode.getIpAddress() + " - BEFORE version: <" + msgReply.getData().getData().getKey() + "> version: " + msgReply.getData().getVersion() + " from " + msgReply.getIpSender());
+                                        LOGGER.info(myNode.getIpAddress() + " -  my version <" +storage.getStorage().get(msgReply.getData().getData().getKey())+">  BEFORE of <" + msgReply.getData().getData().getKey() + " : " + msgReply.getData().getVersion() + " > from " + msgReply.getIpSender());
                                         send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.OK, " GET " + myData.getData().toString()));
                                         for (Node backup : preferenceNodes) {
                                             backup.sendToStorage(new RequestSystemMsg(Msg.OP.PUT, myNode.getIpAddress(), Helper.STORAGE_PORT, myData));
@@ -364,18 +365,18 @@ public class StorageService extends Thread {
                 break;
             case RM:
                 String keyRm = msg.getKey();
-                if( storage.remove(keyRm)) {
+                if(storage.remove(keyRm)) {
                     LOGGER.info(myNode.getIpAddress() + " - RM <" + keyRm + "> from local database");
-                    for (int i = 0; i < WRITE_NODES; i++) {
+                    for (int i = 0; i < preferenceNodes.size(); i++) {
                         RequestSystemMsg msgRemove = new RequestSystemMsg(Msg.OP.RM, myNode.getIpAddress(), Helper.STORAGE_PORT, keyRm);
                         Node n = preferenceNodes.get(i);
                         n.sendToStorage(msgRemove);
-                        LOGGER.info(myNode.getIpAddress() + " -Sent RM to  " + n.getIpAddress());
+                        LOGGER.info(myNode.getIpAddress() + " - Sent RM to  " + n.getIpAddress());
                     }
-                    send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.OK, " RM removed "));
+                    //send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.OK, " RM removed "));
                 }
                 else{
-                  LOGGER.info(myNode.getIpAddress() + " - IMPOSSIBLE RM <" + keyRm + "> from local database");
+                  LOGGER.info(myNode.getIpAddress() + " - Impossible RM <" + keyRm + "> key not found");
                  send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.ERR, " Impossible to remove "));
                 }
 

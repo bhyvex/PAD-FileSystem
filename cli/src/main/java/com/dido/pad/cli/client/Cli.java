@@ -38,7 +38,7 @@ public class Cli {
 
         bufferReader = new BufferedReader(new InputStreamReader(System.in));
 
-        this.cHasher = new Hasher<>(Helper.NUM_NODES_VIRTUALS, DefaultFunctions::SHA1, DefaultFunctions::BytesConverter);
+        this.cHasher = new Hasher<>(DefaultFunctions::SHA1, DefaultFunctions::BytesConverter);
         this.client = client;
 
         // ADD seed nodes to the node storage service
@@ -318,7 +318,7 @@ public class Cli {
                 LOGGER.info(client.getIpAddress() + " - REPLY  OK  from " + msg.getIpSender()+" " + msg.getMsg());
                 break;
             case ERR:
-                LOGGER.info(client.getIpAddress() + " - REPLY  ERR " + msg.getMsg());
+                LOGGER.info(client.getIpAddress() + " - REPLY  ERR  from " +msg.getIpSender() + msg.getMsg());
                 break;
         }
     }
