@@ -130,7 +130,7 @@ public class Cli {
                     break;
                 case ("rm"):
                     String Rmkey = cmds[1];
-                    sendRm(Rmkey);
+                    sendRmAndWait(Rmkey);
                     break;
                 case ("nodes"):
                     System.out.print(getcHasher().getAllNodes());
@@ -149,12 +149,41 @@ public class Cli {
         }
     }
 
-    private void sendRm(String rmkey) {
+    private void sendRmAndWait(String rmkey) {
         Node n = getcHasher().getServerForData(rmkey);
         RequestAppMsg msgRm = new RequestAppMsg(Msg.OP.RM,rmkey,"");
         msgRm.setIpSender(client.getIpAddress());
-        n.sendToStorage(msgRm);
-        LOGGER.info(client.getIpAddress() + "- sent RM  to " + n.getIpAddress());
+        String ip = n.getIpAddress();
+
+        try {
+            InetAddress address = InetAddress.getByName(ip);
+
+            byte[] buf = Helper.fromAppMsgtoByte(msgRm);
+            DatagramPacket packet = new DatagramPacket(buf, buf.length, address, Helper.STORAGE_PORT);
+            udpServer.send(packet);
+            LOGGER.info(client.getIpAddress() + "- Sent RM to: " +ip);
+
+            byte[] buff = new byte[udpServer.getReceiveBufferSize()];
+            DatagramPacket p = new DatagramPacket(buff, buff.length);
+            udpServer.receive(p);
+
+            int packet_length = 0;
+            for (int i = 0; i < 4; i++) {
+                int shift = (4 - 1 - i) * 8;
+                packet_length += (buff[i] & 0x000000FF) << shift;
+            }
+
+            byte[] json_bytes = new byte[packet_length];
+            System.arraycopy(buff, 4, json_bytes, 0, packet_length);
+            String receivedMessage = new String(json_bytes);
+
+            ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module());
+            ReplyAppMsg msgReceived = mapper.readValue(receivedMessage, ReplyAppMsg.class);
+            manageAppReply(msgReceived);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
     }
 

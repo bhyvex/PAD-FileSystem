@@ -5,13 +5,11 @@ package com.dido.pad;
  */
 
 import com.beust.jcommander.Parameter;
-import com.beust.jcommander.converters.IntegerConverter;
 import com.google.code.gossip.GossipMember;
 import com.google.code.gossip.RemoteGossipMember;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.PatternSyntaxException;
 
 public class ParseArgs {
 

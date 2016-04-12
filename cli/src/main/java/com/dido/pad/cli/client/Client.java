@@ -78,7 +78,9 @@ public class Client {
         while (keepRunning.get()) {
             try{
                 RequestClientMsg reqNodes = new RequestClientMsg(Msg.OP.DSCV, ip, Helper.CLIENT_PORT);
+
                 Node node = clientService.getRandomNode();
+
                 byte buf[] = Helper.fromClientMsgtoByte(reqNodes);
                 InetAddress destAddress = InetAddress.getByName(node.getIpAddress());
                 DatagramPacket packet = new DatagramPacket(buf, buf.length, destAddress, Helper.STORAGE_PORT);
@@ -87,15 +89,15 @@ public class Client {
                 LOGGER.debug(ip + " - Sent request nodes in the system to " + node.getIpAddress());
 
                 ArrayList<Node> received =  _waitRepsonseNodes();
-                if(!received.isEmpty())
+                if(!received.isEmpty()) {
                     clientService.updateNodes(received);
-
-                LOGGER.debug(ip + " - Nodes has been updated");
+                    LOGGER.debug(ip + " - Nodes has been updated");
+                }
 
                 Thread.sleep(interval);
 
             } catch (InterruptedException | IOException e) {
-                LOGGER.error(ip + " - "+e.getMessage());
+                LOGGER.debug(ip + " - "+e.getMessage());
             }
         }
         clientSocket.close();
@@ -139,7 +141,8 @@ public class Client {
             }
 
         } catch (SocketException e) {
-            LOGGER.error(ip + " - " + e);
+            LOGGER.error(ip + " - " + e.getMessage());
+            return nodesReceived;
         } catch (IOException e) {
             LOGGER.error(ip + " - "+e);
         }

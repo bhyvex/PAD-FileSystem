@@ -30,7 +30,6 @@ public class Node {
     private int portGossip;
     private int numReplicas;
 
-    private ArrayList<Node> oldNodes = new ArrayList<>();
 
     // Empty constructor for jackson parser to JSON
     public Node() {
@@ -127,16 +126,13 @@ public class Node {
             case UP:
                 Node nodeUP = new Node(member);
                 _storageService.addServer(nodeUP);
-                Node.LOGGER.info(this.getIpAddress() + "- UP event, node " + member.getHost() + " added to consistent hasher");
-                if(oldNodes.contains(nodeUP))  //a previous existing node is going UP
-                    _storageService.manageUP(nodeUP);
+                Node.LOGGER.info(getIpAddress() + "- UP event, node " + member.getHost() + " added to consistent hasher");
+                //_storageService.manageUP(nodeUP);
                 break;
             case DOWN:
                 Node n = new Node(member);
                 _storageService.removeServer(n);
-                Node.LOGGER.info(this.getIpAddress() + "- DOWN event, node " + member.getHost() + " removed from consistent hasher");
-                if(!oldNodes.contains(n))
-                    oldNodes.add(n);
+                Node.LOGGER.info(getIpAddress() + "- DOWN event, node " + member.getHost() + " removed from consistent hasher");
                 break;
         }
     }
