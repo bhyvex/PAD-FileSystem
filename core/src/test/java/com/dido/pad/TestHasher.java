@@ -59,13 +59,11 @@ public class TestHasher {
     public void testOneServer(){
         hasher.addServer(n1);
         StorageData d = new StorageData<>("AAAA","first data");
-        StorageData d2 = new StorageData<>("ZZZZ","second data");
         Assert.assertEquals(hasher.getServerForData(d.getKey()),n1);
     }
 
     @Test
     public void testMoreServer(){
-        //hasher= new Hasher<>(1, DefaultFunctions::SHA1, DefaultFunctions::BytesConverter);
         hasher.addServer(n1);
         hasher.addServer(n2);
         hasher.addServer(n3);
@@ -83,7 +81,6 @@ public class TestHasher {
 
     @Test
     public void testRemoveAddServers(){
-
 
         Hasher<Node> hasher = new Hasher<>(DefaultFunctions::SHA1, DefaultFunctions::BytesConverter);
         hasher.addServer(n1);
@@ -120,7 +117,6 @@ public class TestHasher {
         Assert.assertEquals(hasher.getNextServers(n2,1).get(0),n1);
 
         Assert.assertEquals(hasher.getNextServers(n3,1).get(0),n4);
-        List<Node> nexts = hasher.getNextServers(n3,2);
 
         Assert.assertEquals(hasher.getNextServers(n4,1).get(0),n2);
 
@@ -128,8 +124,8 @@ public class TestHasher {
         Node n =hasher.getServerForData(key);
 
         hasher.removeServer(n3);
-
         Node node1 = hasher.getServerForData(key);
+        Assert.assertEquals(node1,n4);
 
         hasher.addServer(n3);
 

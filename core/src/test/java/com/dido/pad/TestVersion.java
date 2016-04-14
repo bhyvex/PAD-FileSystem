@@ -18,7 +18,7 @@ public class TestVersion {
         vc.increment("ip1");
         vc.increment("ip2");
 
-        //copy from vector clock
+        //copy from vector clockt
         VectorClock vc2 = new VectorClock(vc);
 
         Assert.assertEquals(VectorClock.OCCUR.BEFORE, vc.compare(vc2));
