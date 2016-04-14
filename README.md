@@ -24,12 +24,31 @@ where
 - `-id <String>` is a string representing the id of the node.
 - `-gp <int>` setups the port for the gossip protocol (default port is defined in `Helper.GOSSIP_PORT``).
 - `-sp <int>` setups the port for the storage service (default port is defined in `Helper.STORAGE_PORT`).
-- `[<seedIP>:<String>:<gp>]` is a list of SEED node to be concacted initially by the gossip protocol. Each entry has: seed ip of the node, id of the node (must be equal of running remote node), listening gossip port of the seed node. If the gossip port is not defined by default is set to `Helper.GOSSIP_PORT``
+- `[<seedIP>:<String>[:<gp>]]` is a list of SEED node concatted by the gossip protocol. Each entry has: `ip` of the node, `id` of the node (id must be equal to remote node id),  `gp = gossip port` is the the gossip port, by default is set to `Helper.GOSSIP_PORT``.
 
-In order to run a single node run the command
-`mvn exec:java -pl core -Dexec.mainClass="com.dido.pad.PadFsNode" -Dexec.args="-ip 127.0.0.1 127.0.0.2:3000:4000" `
+#### example 
+The command below run a storage node wwith ip `127.0.0.1` and node ID `node1` and set the seed node to `127.0.0.2:node2`
+
+`java -cp target/core-1.0-SNAPSHOT-jar-with-dependencies.jar  com.dido.pad.PadFsNode -ip 127.0.0.1 -id node1 127.0.0.2:node2`
+
+## Client 
+
+The client is the external node the expose a `cli` (command line interface) to the user.
+
+The parameters are:
+
+`Usage: Client [options] ipSeed:id[:gp] [ipSeed:id[:gp]`
+Where `Options`:
+  -  `--help`: show the help message
+  -  `-id`
+       Id name of the client
+       Default: client
+   - `-ip`
+       Ip address of the client
+       Default: 127.0.0.254
 
 
+`java -cp target/cli-1.0-SNAPSHOT-jar-with-dependencies.jar  com.dido.pad.cli.Cli `
 ### App
 
 On the root of the project.
@@ -41,8 +60,4 @@ Go inside *app* folder
 `java -cp target/app-1.0-SNAPSHOT-jar-with-dependencies.jar com.dido.pad.app.AppRunner`
 
 
-## CLient command line
 
-In order to run the Client command line.
-
-`java -cp target/cli-1.0-SNAPSHOT-jar-with-dependencies.jar  com.dido.pad.cli.Cli `
