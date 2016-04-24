@@ -28,7 +28,7 @@ where
 - `-sp <int>` setups the port for the storage service (default port is defined in `Helper.STORAGE_PORT`).
 - `[<seedIP>:<String>[:<gp>]]` is a list of SEED node concatted by the gossip protocol. Each entry has: `ip` of the node, `id` of the node (id must be equal to remote node id),  `gp = gossip port` is the the gossip port, by default is set to `Helper.GOSSIP_PORT``.
 
-#### Example Node
+#### How to run a storage Node
 The command below run a storage node wwith ip `127.0.0.1` and node ID `node1` and set the seed node to `127.0.0.2:node2`
 
 `java -cp target/core-1.0-SNAPSHOT-jar-with-dependencies.jar  com.dido.pad.PadFsNode -ip 127.0.0.1 -id node1 127.0.0.2:node2`
@@ -46,13 +46,14 @@ Where `Options`:
 The seed nodes contacted initially are:
   - `ipSeed:id[:gp]`: ipseed is the ip, id is the string of the node (equal to the remote), `gp` is the gossip port (default `Helper.GOSSIP_PORT`).
   
-#### Example Client
+#### How to run the Client node
 Run a client with `ip=127.0.0.254` (default) and `id=client` (default) and set one seed node `127.0.0.1:node1`.
 ` java -cp target/cli-1.0-SNAPSHOT-jar-with-dependencies.jar com.dido.pad.cli.MainClient 127.0.0.1:node1`
 
 
 ### App
 Is the easy way to run a set of nodes into a single machine.
+
 
 Go inside *app* folder and type:
 
