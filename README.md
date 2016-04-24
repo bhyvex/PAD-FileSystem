@@ -1,21 +1,23 @@
 #Pad-fs a distributed  persistent data store 
-Pad-fs is a distribute file system written in `java` that supports three main operation:
-- `put(k,v)` : insert of a key value into the distributed file system.
-- `get(k)` : retrieve the last update version of the data associated with the key.
+Pad-fs is a distribute persistent data store written in `java`. 
+
+Pad-fs exposes four main API:
+- `put(k,v)` : insert of a key k and value v into the system.
+- `get(k)` : retrieve the last update version of the data associated with the key k.
 - `list(ip)` : lists all the key values stored into the node with ip address.
+- `rm(k)` : removes the value associated with the key k.
 
 ### Structure of the project
 The pad-fs project is divided in the sub projects:
 - `core` provides the core classes and define a single storage node.
-- `app` is a pre-configured Pad-fs storage system composed by 4 storage nodes. It is useful to run a simulation into a single machine.
-- `cli` defines the node client, is used to performs the operations (put,get,list) into the distributed system.
+- `cli` contains the node client code. The client is an external node that is used to performs the operations (put, get, list) into the distributed system.
+- - `app` is a pre-configured Pad-fs storage system composed by 4 storage nodes. It is useful to run a simulation into a single machine.
 
 ## How to run the projects
 
 ### Core
-The main class of the `core` project is the `PadFsNode.java` class. 
-
-The parameters for the main are 
+The main class of the `core` project is the `PadFsNode.java` class that run a single storage node.
+The parameters are:
 
 `./PadFsNode -ip <ipAddress> -id <String> -gp <int> -sp <int>  [<seedIP>:<id>:<gp>]`
 
@@ -33,7 +35,7 @@ The command below run a storage node wwith ip `127.0.0.1` and node ID `node1` an
 
 ## Client 
 
-The client is the external node the expose a `cli` (command line interface) to the user.
+The client is the external node that expose a `cli` (command line interface) to the user.
 
 `Usage: Client [options] ipSeed:id[:gp] [ipSeed:id[:gp]`
 
