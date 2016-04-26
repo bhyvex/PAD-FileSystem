@@ -23,7 +23,7 @@ creates the `jar` packages of all the three projects under the folder `target/`.
 
 ## How to run the projects
 
-### Core
+### Core project
 The main class of the `core` project is the `PadFsNode.java` class that run a single storage node.
 The parameters are:
 
@@ -39,11 +39,11 @@ where
 #### How to run a storage Node
 The command below run a storage node wwith ip `127.0.0.1` and node ID `node1` and set the seed node to `127.0.0.2:node2`
 
-`java -cp target/core-1.0-SNAPSHOT-jar-with-dependencies.jar  com.dido.pad.PadFsNode -ip 127.0.0.1 -id node1 127.0.0.2:node2`
+`java -cp core-0.1.jar  com.dido.pad.PadFsNode -ip 127.0.0.1 -id node1 127.0.0.2:node2`
 
-## Client 
+## Cli project
 
-The client is the external node that expose a `cli` (command line interface) to the user.
+Contains the client that is the external node that expose the `cli` (command line interface) to the user.
 
 `Usage: Client [options] ipSeed:id[:gp] [ipSeed:id[:gp]`
 
@@ -56,16 +56,15 @@ The seed nodes contacted initially are:
   
 #### How to run the Client node
 Run a client with `ip=127.0.0.254` (default) and `id=client` (default) and set one seed node `127.0.0.1:node1`.
-` java -cp target/cli-1.0-SNAPSHOT-jar-with-dependencies.jar com.dido.pad.cli.MainClient 127.0.0.1:node1`
+` java -cp cli-0.1.jar com.dido.pad.cli.MainClient 127.0.0.1:node1`
 
 
-### App
+### App project
 Is the easy way to run a set of nodes into a single machine.
-
 
 Go inside *app* folder and type:
 
-`java -cp target/app-1.0-SNAPSHOT-jar-with-dependencies.jar com.dido.pad.app.AppRunner`
+`java -cp app-0.1.jar com.dido.pad.app.AppRunner`
 
 It runs four nodes: `127.0.0.1, 127.0.0.2 , 127.0.0.3 , 127.0.0.4` on local machine.
 
