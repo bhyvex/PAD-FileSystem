@@ -9,7 +9,7 @@ Pad-fs exposes four main API:
 
 ### Structure of the project
 The pad-fs project is divided in the sub projects:
-- `core` provides the core classes and define a single storage node.
+- `core` contains the code of a single storage node.
 - `cli` contains the node client code. The client is an external node that is used to performs the operations (put, get, list) into the distributed system.
 - - `app` is a pre-configured Pad-fs storage system composed by 4 storage nodes. It is useful to run a simulation into a single machine.
 
