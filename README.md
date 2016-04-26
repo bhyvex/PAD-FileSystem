@@ -13,6 +13,14 @@ The pad-fs project is divided in the sub projects:
 - `cli` contains the node client code. The client is an external node that is used to performs the operations (put, get, list) into the distributed system.
 - - `app` is a pre-configured Pad-fs storage system composed by 4 storage nodes. It is useful to run a simulation into a single machine.
 
+## How to compile the project
+The project is develped using `Maven`.
+The command: 
+
+`mvn package`
+
+creates the `jar` packages of all the three projects under the folder `target/`.
+
 ## How to run the projects
 
 ### Core
