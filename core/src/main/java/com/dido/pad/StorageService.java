@@ -580,7 +580,7 @@ public class StorageService extends Thread {
         ArrayList<Node> nexts = cHasher.getNextServers(myNode,1);
         ArrayList<Node> previous = cHasher.getPreviousServer(myNode,1);
 
-        if(cHasher.getNextServers(myNode,1).get(0) ==nodeUp  && previous.contains(nodeUp)){
+        if(cHasher.getNextServers(myNode,1).get(0)==nodeUp  && previous.contains(nodeUp)){
             for (Versioned vdata : storage.getStorage().values()) {
                 RequestSystemMsg msg = new RequestSystemMsg(Msg.OP.PUT, myNode.getIpAddress(), myNode.getPortStorage(), vdata);
                 LOGGER.info(myNode.getIpAddress() + " - UP node " + nodeUp.getIpAddress() + ", Sent data " + vdata.getData());
