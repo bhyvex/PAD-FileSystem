@@ -34,8 +34,8 @@ The parameters are:
 where
 - `-ip` is the ip address (x.y.z.w) of the node.
 - `-id <String>` is a string representing the id of the node.
-- `-gp <int>` setups the port for the gossip protocol (default port is defined in `Helper.GOSSIP_PORT``).
-- `-sp <int>` setups the port for the storage service (default port is defined in `Helper.STORAGE_PORT`).
+- `-gp <int>` setups the port for the gossip protocol (default port is defined in `Helper.GOSSIP_PORT=2000``).
+- `-sp <int>` setups the port for the storage service (default port is defined in `Helper.STORAGE_PORT=3000`).
 - `[<seedIP>:<String>[:<gp>]]` is a list of SEED node concatted by the gossip protocol. Each entry has: `ip` of the node, `id` of the node (id must be equal to remote node id),  `gp = gossip port` is the the gossip port, by default is set to `Helper.GOSSIP_PORT``.
 
 #### How to run a storage Node
