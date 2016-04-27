@@ -1,5 +1,7 @@
 package com.dido.pad.hashing;
 
+import com.dido.pad.Node;
+import com.dido.pad.data.Versioned;
 import com.google.common.base.Preconditions;
 
 import java.math.BigInteger;
@@ -60,6 +62,21 @@ public class Hasher<T> implements IHasher<T> {
         } else {
             return serversMap.get(nearServer);
         }
+    }
+
+    synchronized  public ArrayList<Versioned> getDataInterval(Collection<Versioned> data, T start, T end){
+        ArrayList<Versioned> interval = new ArrayList<>();
+        ByteBuffer s = convertAndApplyHash(start);
+        ByteBuffer e = convertAndApplyHash(end);
+
+        for(Versioned v : data){
+            byte[] bHashData = hashFunction.hash(v.getData().getKey().getBytes());
+            ByteBuffer bbData = ByteBuffer.wrap(bHashData);
+            if( bbData.compareTo(s) >0  && bbData.compareTo(e)<= 0 ) // negative = less; zero = eqaul; positive = greater
+                interval.add(v);
+        }
+        return interval;
+
     }
 
     synchronized  public ArrayList<T> getAllNodes() {

@@ -128,6 +128,7 @@ public class Node {
                 _storageService.addServer(nodeUP);
                 Node.LOGGER.info(getIpAddress() + "- UP event, node " + member.getHost() + " added to consistent hasher");
                 //_storageService.manageUP(nodeUP);
+
                 break;
             case DOWN:
                 Node n = new Node(member);
@@ -145,7 +146,7 @@ public class Node {
 
         Node node = (Node) o;
 
-        return ipAddress.equals(node.ipAddress) && id.equals(node.id);
+        return ipAddress.equals(node.ipAddress)&& id.equals(node.id);
 
     }
 

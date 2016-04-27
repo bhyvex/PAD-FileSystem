@@ -1,0 +1,41 @@
+\chapter{Project structure} \label{ch:ch2}
+\textit{Pad-fs} is divides in three sub projects:
+\begin{itemize}
+\item \texttt{cli}: package containing the source codes for the client node
+	\begin{itemize}
+		\item \texttt{Client.java}: is the code of the client node. It has the service that executes the client's gossip.
+		\item \texttt{Cli.java}: is the command line interface exposed to the user. It contains the same consistent hasher of the node in the storage system.
+		
+	\end{itemize}
+\item \texttt{app}: package containing a runnable simple storage system composed by a set of nodes, that can be run on a single machine (useful for testing).
+	\begin{itemize}
+	 \item \texttt{AppRunner.java}: starts a set of the storage nodes onto the local machine. It provides also the possibility to remove/add an existing node in the system in order to simulate a leave/down event in the system.
+	\end{itemize}
+
+\item \texttt{core}: contains the source code of a single storage node.
+\begin{itemize}
+\item \texttt{data}: contains the structure of the data stored onto the database.
+ \begin{itemize}
+ \item \texttt{StorageData.java}: represents the key value that can be stored into the system. The key is a string and the value is a generic type.
+ \item \texttt{Versioned.java}: wraps the StorageData with a version.
+ \end{itemize}
+\item \texttt{hashing}: contains the interface and the classes to define the consistent hasher logic used by the nodes and the client.
+\begin{itemize}
+\item \texttt{Hasher.java}: is the consistent hashing code. It maps the nodes and the data into the same space. The hash function used for the hashing procedure can be any unless it implements the \textit{IHashFunction}. The hashing of the node is done by the concatenation of the ip and the id.
+\end{itemize}
+\item \texttt{messages}: contains the structure of the messages exchanged in the system.
+\begin{itemize}
+\item \texttt{AppMsg} is the top level class that define  the type (request, reply) the operation (put, get, list, ok, err, dscv) the IP of the sender, and the listening port.
+\item \texttt{ReplyXXX.java}: are reply messages. 
+\item \texttt{RequestYYY.java}: are request messages.
+\end{itemize}
+\item \textit{versioning}: contains the version type.
+\begin{itemize}
+\item \textit{Version.java}: is the interface that a concrete version must be implemented.
+\item \textit{VectoClock.java}: is a concrete version that represents the vector clock. It provides all the method needed to a vector clock: compare different version, merge with another vector clock.
+\end{itemize}
+\end{itemize}
+\end{itemize}
+
+
+

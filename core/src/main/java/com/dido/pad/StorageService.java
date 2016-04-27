@@ -26,8 +26,8 @@ public class StorageService extends Thread {
     public static final Logger LOGGER = Logger.getLogger(StorageService.class);
 
     public int N_REPLICAS = 2;   //  the length of preference list: the backups node after the master in clockwise direction
-    public int WRITE_NODES = 1;  // number of nodes after the master tha must return a write response
-    public int READ_NODES = 2;   // number of nodes that must read that must return a read response
+    public int WRITE_NODES = 2;  // number of nodes after the master tha must return a write response
+    public int READ_NODES = 1;   // number of nodes that must read that must return a read response
 
     private Hasher<Node> cHasher;
     private PersistentStorage storage;
@@ -53,8 +53,8 @@ public class StorageService extends Thread {
         // ADD seed nodes to the node storage service
         for (GossipMember member : seedNodes) {
             Node n = new Node(member);
-            //TODO problem change saGossipMember to a Node
-          //  if (!cHasher.containsNode(n))
+            //TODO problem change a GossipMember to a Node
+            // if (!cHasher.containsNode(n))
                 cHasher.addServer(n);
         }
 
@@ -577,13 +577,26 @@ public class StorageService extends Thread {
 
 
     public void manageUP(Node nodeUp) {
-        ArrayList<Node> nexts = cHasher.getNextServers(myNode,1);
-        ArrayList<Node> previous = cHasher.getPreviousServer(myNode,1);
+        Node next = cHasher.getNextServers(myNode,1).get(0);
+        Node previous = cHasher.getPreviousServer(myNode,1).get(0);
+        Node twoPrevious = cHasher.getPreviousServer(myNode,2).get(1);
 
-        if(cHasher.getNextServers(myNode,1).get(0)==nodeUp  && previous.contains(nodeUp)){
-            for (Versioned vdata : storage.getStorage().values()) {
+
+        /*if(nodeUp.getIpAddress() == next.getIpAddress()){ //send the backup value to the next server
+            ArrayList<Versioned> dInterval = getcHasher().getDataInterval(storage.getStorage().values(), previous, myNode);
+            for(Versioned vdata: dInterval){
                 RequestSystemMsg msg = new RequestSystemMsg(Msg.OP.PUT, myNode.getIpAddress(), myNode.getPortStorage(), vdata);
-                LOGGER.info(myNode.getIpAddress() + " - UP node " + nodeUp.getIpAddress() + ", Sent data " + vdata.getData());
+                LOGGER.info(myNode.getIpAddress() + " - UP next node " + nodeUp.getIpAddress() + ", Sent data " + vdata.getData());
+                nodeUp.sendToStorage(msg);
+            }
+        }*/
+
+        if(nodeUp.getIpAddress() == previous.getIpAddress()){  //sent key to the previous node before me, that i have received in the mean time.
+            System.out.println(myNode.getIpAddress()+" -> UP:"+nodeUp.getIpAddress() + " next:" + next.getIpAddress()+ " previous: "+ previous.getIpAddress());
+            ArrayList<Versioned> dInterval = getcHasher().getDataInterval(storage.getStorage().values(), twoPrevious, previous);
+            for(Versioned vdata: dInterval){
+                RequestSystemMsg msg = new RequestSystemMsg(Msg.OP.PUT, myNode.getIpAddress(), myNode.getPortStorage(), vdata);
+                LOGGER.info(myNode.getIpAddress() + " - UP previous node " + nodeUp.getIpAddress() + ", Sent data " + vdata.getData());
                 nodeUp.sendToStorage(msg);
             }
         }

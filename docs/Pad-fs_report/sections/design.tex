@@ -1,0 +1,20 @@
+%\chapter{Design Choice}\label{ch:ch2}
+\chapter {Pad-fs design choice}
+In this section are listed the main characteristics of \emph{Pad-fs} and the protocols that has been chosen.  \emph{Paf-fs} exploits a weak consistency model, based on quorum protocol and primary-backup protocol where writes and read operation are forwarded to a single master server.
+
+\begin{itemize}
+\item \textbf{Partitioning}. In order to scale incrementally pad-fs use \textit{consistent hashing} . The hash function can be defined by the programmer, by default \emph{Pad-fs} uses \textit{SHA1} hash function  for hashing both the data and the nodes.
+
+\item \textbf{Replication}. In \emph{Pad-fs} a data is replicated in multiple distinct nodes: into the master node and into \texttt{N\_REPLICAS} backup nodes in the clockwise direction. The master node is responsable to manage the keys. \texttt{N\_REPLICAS} is the variable that indicates the number of nodes after the master node that has to receive a copy of the data (by default \texttt{N\_REPLICAS}=2).
+
+\item \textbf{Quorum system}. It is used for handling temporary failures. \texttt{WRITE\_NODES} are the number of backups nodes that must responds successfully at at put operation. \texttt{READ\_NODES} are the number of backups nodes that must terminates successfully to a get operation. If not all the backups responds a error message is shown to the user and the operation is not performed (by default \texttt{WRITE\_NODES}=1, and  \texttt{READ\_NODES} = 2)
+
+\item \textbf{Versioning}. Pad-fs uses vector clocks associated with the data in order to resolve inconsistency. The vector clock is a pair  <id:n>  where id is the node id and \textit{n} is an integer number. 
+
+\item \textbf{Resolve conflicts}. An important design choice is when resolve the conflicts.
+\emph{Pad-fs} resolves the conflicts during read (GET) operation. 
+The conflict resolution procedure is performed by the user and not by the storage service. When a conflict is detected, all the concurrent version  are sent to the client that asks to the user to select the right version of the data. When the right version is chosen by the user, the version is updated in all the backups nodes
+
+\item \textbf{Gossip protocol}. is used for membership and failure/update detection of the nodes. Pad-fs admits only the case when a already present node goes down and than return up, it doesn't admit a totally  new node join the storage system.
+
+\end{itemize}

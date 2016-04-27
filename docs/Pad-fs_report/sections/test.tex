@@ -1,0 +1,71 @@
+\subsection{Tests and run the projects}
+
+The tests are located into the \textit{core} package. They cover the most important class of the system.
+In the \texttt{core} package the test cover the three main important aspects:
+\begin{itemize}
+\item \textit{Consistent Hashing}: test all the classes related to the hashing procedures.
+\begin{itemize}
+\item \textit{testHashing.java} test the insertion of nodes and check presents of the nodes.
+\item \textit{testMoreServer.java} test the insertion of data and the server for the data inserted.
+\item \textit{testRemoveAddServers.java} test adding or removing nodes that change data association with the nodes.
+\item \textit{testNextPreviousServer.java} test previous or next nodes retrieving.
+
+\end{itemize}
+\item \textit{Versioning}: tests the versions and the operations among different data (merge, compare).
+\begin{itemize}
+\item \textit{testVectors.java} test clone and  merge operation on vector clocks. Tests also the comparison among vector clocks.
+\item \textit{testVersioned.java} test the data into the storage associated with a version. It update the versino and check the comparison among versioned data.
+\end{itemize}
+\item \textit{Quorum system}: tests the replication of the data and the quorum system running a simple storage system.
+\begin{itemize}
+\item \textit{testGetMerge.java} run a storage node of three nodes and test the get and merge operations and the data. It tests also the message exchange among nodes.
+\end{itemize}
+\end{itemize}
+
+In order to run the \textbf{tests} the syntax is:
+
+\begin{verbatim}
+$ mvn test
+\end{verbatim}
+
+For testing the execution of the operations can be used the  \textit{AppRunner.java}. It starts, on local machine, a set of storage nodes that can be used for testing some operations.
+
+\subsubsection{Run the projects}
+In order to run a \textbf{storage node} the syntax is:
+
+\begin{verbatim}
+$ java cp core-1.0-SNAPSHOT-jar-with-dependencies.jar \
+ com.dido.pad.PadFsNode  [options] ipSeed:id[:gp]
+\end{verbatim}
+The example below run a node with ip 127.0.0.2 and node2 id and sets the
+127.0.0.1 as the seed node.
+\begin{verbatim}
+$ java cp core-1.0-SNAPSHOT-jar-with-dependencies.jar \
+  com.dido.pad.PadFsNode -ip 127.0.0.2 -id node2 127.0.0.1:node1
+\end{verbatim}
+
+In order to run a \textbf{client} with IP address 127.0.0.254  and one seed node with 
+IP address 127.0.0.1, can be used the command:
+\begin{verbatim}
+$  java -cp target/cli-1.0-SNAPSHOT-jar-with-dependencies.jar 
+   com.dido.pad.cli.MainClient  -ip 127.0.0.254 -id client 127.0.0.1:node1
+\end{verbatim}
+
+
+\subsection{External libraries}
+I have used the sequent external libraries:
+\begin{itemize}
+\item \texttt{com.github.edwardcapriolo}: provides the gossiping protocol. I have used this library has a background service to the storage node in order to update the consistent hashing when a node in the network goes down or up.
+The version used in the project can be found \href{https://jitpack.io/#edwardcapriolo/gossip/master}{here}. I have used this version because in the google version there is a bug when a node goes up.
+
+\item \texttt{log4j}: is used to perform the logging procedure. Each log level is configurable for each class in the \texttt{log4j.properties} in the core project. Essentially there are two log level: debug and info.
+
+\item \texttt{com.fasterxml.jackson.core}: is used to parse the messages into a json format.
+
+\item \texttt{org.mapdb}: is used to implement the persistent storage in the node. It permits to store the key value data store into a file and performs useful operations.
+
+\item \texttt{junit}: is used to implement the unit tests.
+
+\item \texttt{com.beust.jcommander}: is used to parse the command line options of the programs.
+
+\end{itemize}

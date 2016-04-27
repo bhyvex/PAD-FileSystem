@@ -104,7 +104,6 @@ public class Cli {
         while(true){
 
             System.out.print("\n>> ");
-            //LOGGER.info("\n>>");
             String input = null;
             try {
                 input = bufferReader.readLine();
@@ -389,17 +388,4 @@ public class Cli {
         return nodes.get(random);
     }
 
-  /*  public void manageUP(Node nodeUp) {
-        ArrayList<Node> nexts = cHasher.getNextServers(client,1);
-        ArrayList<Node> previous = cHasher.getPreviousServer(client,1);
-
-        if(nexts.contains(nodeUp) && previous.contains(nodeUp)){
-            for (Versioned vdata : storage.getStorage().values()) {
-                RequestSystemMsg msg = new RequestSystemMsg(Msg.OP.PUT, client.getIpAddress(), ClientHelper.STORAGE_PORT, vdata);
-                Cli.LOGGER.info(this.client.getIpAddress() + " - UP node " + nodeUp.getIpAddress() + ", Sent data " + vdata.getData());
-                nodeUp.sendToStorage(msg);
-            }
-        }
-
-    }*/
 }
