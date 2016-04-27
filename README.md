@@ -11,7 +11,7 @@ Pad-fs exposes four main API:
 The pad-fs project is divided in the sub projects:
 - `core` contains the code of a single storage node.
 - `cli` contains the node client code. The client is an external node that is used to performs the operations (put, get, list) into the distributed system.
-- - `app` is a pre-configured Pad-fs storage system composed by 4 storage nodes. It is useful to run a simulation into a single machine.
+-  `app` is a pre-configured  storage system composed by 4 storage nodes. It is useful to run a simulation into a single machine.
 
 ## How to compile the project
 The project is develped using `Maven`.
@@ -22,6 +22,8 @@ The command:
 creates the `jar` packages of all the three projects under the folder `target/`.
 
 ## How to run the projects
+
+Download the latest release version of the project.
 
 ### Core project
 The main class of the `core` project is the `PadFsNode.java` class that run a single storage node.
@@ -49,23 +51,30 @@ Contains the client that is the external node that expose the `cli` (command lin
 
 Where `Options`:
   -  `--help`: show the help message
-  -  `-id`: (String) Id of the client (Default  `client`)
-  - `-ip`: Ip address of the client (Default: `127.0.0.254`)
+  -  `-id`: (String) Id of the client (Default  `-id client`)
+  - `-ip`: Ip address of the client (Default: `-ip 127.0.0.254`)
 The seed nodes contacted initially are:
   - `ipSeed:id[:gp]`: ipseed is the ip, id is the string of the node (equal to the remote), `gp` is the gossip port (default `Helper.GOSSIP_PORT`).
   
 #### How to run the Client node
-Run a client with `ip=127.0.0.254` (default) and `id=client` (default) and set one seed node `127.0.0.1:node1`.
+Run a client with `-ip 127.0.0.254` (default) and `- id client` (default) and set one seed node `127.0.0.1:node1`.
 ` java -cp cli-0.1.jar com.dido.pad.cli.MainClient 127.0.0.1:node1`
 
 
 ### App project
-Is the easy way to run a set of nodes into a single machine.
+Is the easy way to run a set of four storage nodes into a single machine.
 
 Go inside *app* folder and type:
 
 `java -cp app-0.1.jar com.dido.pad.app.AppRunner`
 
 It runs four nodes: `127.0.0.1, 127.0.0.2 , 127.0.0.3 , 127.0.0.4` on local machine.
+
+IN order to show the available command type `h` on the console, it shows the `usage`:
+```
+usage: 
+  down ip : the node with ip  goes down 
+  up  x : the node with ip (127.0.0.x) goes up 
+```
 
 
