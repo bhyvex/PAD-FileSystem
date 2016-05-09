@@ -23,7 +23,7 @@ creates the `jar` packages of all the three projects under the folder `target/`.
 
 ## How to run the projects
 
-Download the latest release version of the project.
+Download the latest [release](https://github.com/dido18/PAD-FileSystem/releases)  version of the project.
 
 ### Core project
 The main class of the `core` project is the `PadFsNode.java` class that run a single storage node.
