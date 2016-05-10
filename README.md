@@ -22,9 +22,14 @@ The command:
 creates the `jar` packages of all the three projects under the folder `target/`.
 
 ## How to run the projects
+There are three ways to rrn the project:
 
-Download the latest [release](https://github.com/dido18/PAD-FileSystem/releases)  version of the project.
+- Run the single jar componenet dowloading the  latest [release](https://github.com/dido18/PAD-FileSystem/releases). 
+- Run the simulation in a single machine (multithreaded)
+- Create a Docker image with the PadFs node code inside, and than tun the image.
 
+
+#### Running the release
 ### Core project
 The main class of the `core` project is the `PadFsNode.java` class that run a single storage node.
 The parameters are:
