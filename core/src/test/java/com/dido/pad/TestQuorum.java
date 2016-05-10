@@ -40,7 +40,7 @@ public class TestQuorum {
     }
 
 
-   @Test
+   //@Test
     public void testGetMerge() {
 
        try {

@@ -21,6 +21,7 @@ public class VectorClock  implements Version, Serializable {
         this.delta = 1;
     }
 
+    //copy constructor
     public VectorClock(VectorClock v){
         if(v.vectorClock != null)
             vectorClock =  (HashMap)v.vectorClock.clone();

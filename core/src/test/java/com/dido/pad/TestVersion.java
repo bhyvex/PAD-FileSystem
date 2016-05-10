@@ -66,4 +66,14 @@ public class TestVersion {
 
 
     }
+
+    @Test
+    public void testCopyConstructor(){
+            Versioned v = new Versioned(new StorageData<>("davide", "neri"));
+            Versioned copy = new Versioned(v);
+        copy.setData(new StorageData<>("davide", "gnagrnde2"));
+        copy.getVersion().increment("node");
+        Assert.assertNotEquals(v.getData().getValue(),copy.getData().getValue());
+
+    }
 }

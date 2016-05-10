@@ -13,6 +13,12 @@ public class StorageData<T>  implements Serializable{
     public StorageData() {
     }
 
+    //copy constructor
+    public StorageData(StorageData<T> sd){
+        this.key = sd.key;
+        this.value = sd.value;
+    }
+
     public StorageData(String key, T value) {
         this.key = key;
         this.value = value;

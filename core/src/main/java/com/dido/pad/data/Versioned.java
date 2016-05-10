@@ -17,7 +17,6 @@ public class Versioned  implements Serializable{
 
     private Version version;
 
-
     public Versioned() {
         //for jackson JSOn parser
     }
@@ -27,10 +26,18 @@ public class Versioned  implements Serializable{
         this.version = new VectorClock();
     }
 
-
     public Versioned(StorageData<?> data, Version version) {
         this.version = version == null ? new VectorClock() : (VectorClock) version;
         this.data = data;
+    }
+    // the copy constructor
+    public Versioned(Versioned v) {
+        // String already has a copy constructor ;)
+        if(v != null) {
+            this.data = new StorageData<>(v.getData());
+            if(v.getVersion() instanceof VectorClock)
+                this.version = new VectorClock((VectorClock)v.getVersion());
+        }
     }
 
     public void setVersion(VectorClock version) {

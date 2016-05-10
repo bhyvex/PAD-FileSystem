@@ -9,11 +9,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.google.code.gossip.GossipMember;
+import com.sun.org.apache.regexp.internal.RE;
 import org.apache.log4j.Logger;
 
 
 import java.io.IOException;
 import java.net.*;
+import java.time.temporal.ValueRange;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -52,8 +54,9 @@ public class StorageService extends Thread {
 
         // ADD seed nodes to the node storage service
         for (GossipMember member : seedNodes) {
-            Node n = new Node(member);
             //TODO problem change a GossipMember to a Node
+            Node n = new Node(member);
+
             // if (!cHasher.containsNode(n))
                 cHasher.addServer(n);
         }
@@ -105,19 +108,20 @@ public class StorageService extends Thread {
 
     @Override
     public void run() {
-/*        // problem if the system is  up: takes as next the first nodes the goes up.
-        while (N_REPLICAS > cHasher.getAllNodes().size()) {
-            StorageService.LOGGER.info(myNode.getIpAddress() + " -  Required " + N_REPLICAS + " backup nodes, found " + cHasher.getAllNodes().size());
+        // problem if the system is  up: takes as next the first nodes the goes up.
+        int g = cHasher.getAllNodes().size();
+        while (N_REPLICAS < cHasher.getAllNodes().size() && cHasher.getAllNodes().size() < Helper.NETWORK_SIZE) {
+            LOGGER.info(myNode.getIpAddress() + " -  Required ("+ (N_REPLICAS+1) +" < #nodes <=" + Helper.NETWORK_SIZE+ ") nodes, found " + cHasher.getAllNodes().size()+" nodes.");
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
-        preferenceNodes = cHasher.getNextServers(myNode, N_REPLICAS);*/
+        preferenceNodes = cHasher.getNextServers(myNode, N_REPLICAS);
 
         while (keepRunning.get()) {
-            // problem if the system is  up: takes as next the first nodes the goes up.
+/*            // problem if the system is  up: takes as next the first nodes the goes up.
             while (N_REPLICAS > cHasher.getAllNodes().size()) {
                 StorageService.LOGGER.info(myNode.getIpAddress() + " -  Required " + N_REPLICAS + " backup nodes, found " + cHasher.getAllNodes().size());
                 try {
@@ -127,7 +131,7 @@ public class StorageService extends Thread {
                 }
             }
             preferenceNodes = cHasher.getNextServers(myNode, N_REPLICAS);
-
+*/
             try {
                 byte[] buff = new byte[udpServer.getReceiveBufferSize()];
                 DatagramPacket p = new DatagramPacket(buff, buff.length);
@@ -217,15 +221,16 @@ public class StorageService extends Thread {
             case PUT:
                 Versioned vData = msg.getVersionedData();
                 String key = vData.getData().getKey();
+                String value = (String) vData.getData().getValue();
                 Versioned mergeData = new Versioned(vData.getData());
                 mergeData.mergeTo(vData);// merge VersionData received with my data
                 if(!storage.containsKey(key)) {
                     storage.put(mergeData);
-                    StorageService.LOGGER.info(myNode.getIpAddress() + " - PUT key <" + key + "> version: " + mergeData.getVersion());
+                    StorageService.LOGGER.info(myNode.getIpAddress() + " - PUT key <" + key +":"+ value+ "> version: " + mergeData.getVersion());
                 }
                 else {
                     storage.update(mergeData);
-                    StorageService.LOGGER.info(myNode.getIpAddress() + " - UPDATED  key <" + key + "> version: " + mergeData.getVersion());
+                    StorageService.LOGGER.info(myNode.getIpAddress() + " - UPDATED  key <" + key +":"+value+ "> version: " + mergeData.getVersion());
                 }
 
                 send(msg.getIpSender(), Helper.QUORUM_PORT, new ReplySystemMsg(Msg.OP.OK, myNode.getIpAddress(), Helper.QUORUM_PORT, "PUT Succesfully "));
@@ -249,9 +254,12 @@ public class StorageService extends Thread {
                 String keyRm = msg.getKey();
                 if(storage.remove(keyRm)){
                     LOGGER.info(myNode.getIpAddress() + " - Removed  <"+keyRm+" > from local database");
+                    send(msg.getIpSender(), Helper.QUORUM_PORT, new ReplySystemMsg(Msg.OP.OK, myNode.getIpAddress(), Helper.QUORUM_PORT, "RM Succesfully "));
                 }
                 else{
-                    LOGGER.info(myNode.getIpAddress() + " - Impossible to remove  <"+keyRm+" >from local database");
+                    String info = " - Impossible to remove  <"+keyRm+" >from local database";
+                    LOGGER.info(myNode.getIpAddress() + info);
+                    send(msg.getIpSender(), Helper.QUORUM_PORT, new ReplySystemMsg(Msg.OP.OK, myNode.getIpAddress(), Helper.QUORUM_PORT, info));
                 }
         }
     }
@@ -266,7 +274,28 @@ public class StorageService extends Thread {
         switch (msg.getOperation()) {
             case PUT:
                 StorageService.LOGGER.info(myNode.getIpAddress() + " - Received  Msg " + msg.getOperation() + " <" + msg.getKey() + ":" + msg.getValue() + ">");// from " + msg.getIpSender());
-                if (storage.containsKey(msg.getKey())) { // UPDATE data and increment version
+                if (storage.containsKey(msg.getKey())) { // UPDATE data
+                    Versioned oldData = storage.get(msg.getKey());
+
+                    Versioned newData =  new Versioned(oldData);
+                    newData.setData(new StorageData<>(msg.getKey(), msg.getValue()));
+                    newData.getVersion().increment(myNode.getId());
+
+                    List<ReplySystemMsg> replies = askQuorum(newData, Helper.QUORUM_PORT, Msg.OP.PUT);
+                    if(replies.size() < WRITE_NODES ){//|| checkAllOK(replies)){ // UNDO update operation: send old data in a PUT operation
+                        for(Node n : preferenceNodes){
+                        //for(ReplySystemMsg rep : replies){
+                            send(n.getIpAddress(), Helper.STORAGE_PORT, new RequestSystemMsg(Msg.OP.PUT,myNode.getIpAddress(),Helper.STORAGE_PORT, oldData));
+                            LOGGER.info(myNode.getIpAddress()+" - UPDATE Aborted: sent PUT of old value to "+n.getIpAddress());
+                        }
+                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.ERR, " Error: UPDATE <" + msg.getKey()+ ":" + msg.getValue() +  "> ABORTED, not al the Writes node has responded"));
+                    }
+                    else{
+                        storage.update(newData);
+                        LOGGER.info(this.myNode.getIpAddress() + " - Updated <" + msg.getKey() + ":" + msg.getValue() + "> into local database");
+                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.OK, " UPDATE  <" + msg.getKey() + ":" + msg.getValue() + ">"));
+                    }
+                    /*
                     Versioned d = storage.get(msg.getKey());
                     d.setData(new StorageData<>(msg.getKey(), msg.getValue()));
                     d.getVersion().increment(myNode.getId());
@@ -278,10 +307,25 @@ public class StorageService extends Thread {
                         send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.ERR, " Error: PUT not all the WRITE NODES  have responded"));
                     else
                         send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.OK, " UPDATE  <" + msg.getKey() + ":" + msg.getValue() + ">"));
-
+                    */
                 } else { // PUT new object
                     Versioned vData = new Versioned(new StorageData<>(msg.getKey(), msg.getValue()));
-                    vData.getVersion().increment(myNode.getId());
+                    List<ReplySystemMsg> replies = askQuorum(vData, Helper.QUORUM_PORT, Msg.OP.PUT);
+                    if(replies.size() < WRITE_NODES){
+                        for(Node n : preferenceNodes){
+                        //for(ReplySystemMsg rep: replies){ // sent RM to all the nodes in the preference list
+                            send(n.getIpAddress(), Helper.STORAGE_PORT, new RequestSystemMsg(Msg.OP.RM,myNode.getIpAddress(),Helper.STORAGE_PORT,vData.getData().getKey()));
+                            LOGGER.info(myNode.getIpAddress()+" - PUT Aborted: sent REMOVE to "+n.getIpAddress());
+                        }
+                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.ERR, " Error: PUT <" + msg.getKey()+ ":" + msg.getValue() +  "> ABORTED, not al the Writes node has responded"));
+                    }else {
+                        storage.put(vData);
+                        LOGGER.info(this.myNode.getIpAddress() + " - Inserted <" + msg.getKey() + ":" + msg.getValue() + "> into local database");
+                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.OK, " PUT  <" + msg.getKey() + ":" + msg.getValue() + ">"));
+                    }
+                        /*
+                    Versioned vData = new Versioned(new StorageData<>(msg.getKey(), msg.getValue()));
+                    //vData.getVersion().increment(myNode.getId());
                     this.storage.put(vData);
                     StorageService.LOGGER.info(this.myNode.getIpAddress() + " - Inserted <" + msg.getKey() + ":" + msg.getValue() + "> into local database");
 
@@ -291,6 +335,7 @@ public class StorageService extends Thread {
                         send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.ERR, " Error: PUT not all the WRITE NODES  have responded"));
                     else
                         send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.OK, " PUT  <" + msg.getKey() + ":" + msg.getValue() + ">"));
+                    */
                 }
                 break;
             case GET:
@@ -355,7 +400,7 @@ public class StorageService extends Thread {
                 break;
             case LIST: //list command from client
                 if (!storage.isEmpty()) {
-                    send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.OK, " LIST " + storage.toString()));
+                    send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.OK,"pref"+preferenceNodes.toString()+ " LIST " + storage.toString()));
                     LOGGER.info(myNode.getIpAddress() + " - Sent LIST of my database to " + msg.getIpSender());
                 } else {
                     send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.ERR, " LIST: empty database"));
@@ -365,6 +410,25 @@ public class StorageService extends Thread {
                 break;
             case RM:
                 String keyRm = msg.getKey();
+                if(storage.containsKey(keyRm)) {
+                    List<ReplySystemMsg> replies = askQuorum(storage.get(keyRm),Helper.QUORUM_PORT, Msg.OP.RM);
+                    if(replies.size() < WRITE_NODES ){//|| checkAllOK(replies)){  // not all the writes nodes has responded OR some responds ERR
+                        for(Node n : preferenceNodes){
+                        //for(ReplySystemMsg rep: replies){  //new RequestSystemMsg(Msg.OP.PUT,myNode.getIpAddress(),Helper.STORAGE_PORT, oldData)
+                            send(n.getIpAddress(), Helper.STORAGE_PORT, new RequestSystemMsg(Msg.OP.PUT,myNode.getIpAddress(),Helper.STORAGE_PORT,storage.get(keyRm)));
+                            LOGGER.info(myNode.getIpAddress()+" - RM Aborted: sent PUT to "+n.getIpAddress());
+                        }
+                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.ERR, " Error: RM <" + msg.getKey()+ ":" + msg.getValue() +  "> ABORTED, not al the Writes node has responded"));
+                    }else {
+                        storage.remove(keyRm);
+                        LOGGER.info(this.myNode.getIpAddress() + " - Removed <" + msg.getKey() + ":" + msg.getValue() + "> from local database");
+                        send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.OK, " RM succesfully  <" + msg.getKey() + ":" + msg.getValue() + ">"));
+                    }
+                }else {  //my local db doesnt't contain the key
+                    LOGGER.info(myNode.getIpAddress() + " - Impossible RM <" + keyRm + "> key not found");
+                    send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.ERR, " Impossible to remove "));
+                }
+                /*
                 if(storage.remove(keyRm)) {
                     LOGGER.info(myNode.getIpAddress() + " - RM <" + keyRm + "> from local database");
                     for (int i = 0; i < preferenceNodes.size(); i++) {
@@ -378,9 +442,17 @@ public class StorageService extends Thread {
                 else{
                   LOGGER.info(myNode.getIpAddress() + " - Impossible RM <" + keyRm + "> key not found");
                  send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.ERR, " Impossible to remove "));
-                }
+                }*/
 
         }
+    }
+
+    private boolean checkAllOK(List<ReplySystemMsg> replies) {
+        for(ReplySystemMsg msg : replies){
+            if(msg.getOperation().equals(Msg.OP.ERR))
+                return false;
+        }
+        return true;
     }
 
     private void manageAppReply(ReplyAppMsg msg) {
@@ -425,12 +497,27 @@ public class StorageService extends Thread {
     public List<ReplySystemMsg> askQuorum(Versioned vData, int listenPort, Msg.OP op) {
         RequestSystemMsg reqQuorum;
 
+
+        switch (op){
+            case PUT:
+                reqQuorum = new RequestSystemMsg(op, myNode.getIpAddress(), 0, vData);
+                break;
+            case GET:
+                reqQuorum = new RequestSystemMsg(op, myNode.getIpAddress(), 0, vData.getData().getKey());
+                break;
+            case RM:
+                reqQuorum = new RequestSystemMsg(op, myNode.getIpAddress(), 0, vData.getData().getKey());
+                break;
+            default:
+                reqQuorum = new RequestSystemMsg(op, myNode.getIpAddress(), 0, vData);
+        }
+        /*
         if (op.equals(Msg.OP.PUT))
             reqQuorum = new RequestSystemMsg(op, myNode.getIpAddress(), 0, vData);
         else{ //GET method
             reqQuorum = new RequestSystemMsg(op, myNode.getIpAddress(), 0, vData.getData().getKey());
         }
-
+*/
         try {
             DatagramSocket dsocket = new DatagramSocket(listenPort);
 
@@ -457,8 +544,21 @@ public class StorageService extends Thread {
 
         DatagramSocket udpQuorum;  //server listen Quorum selection
 
-
-        int numResponses = (op == Msg.OP.PUT) ? WRITE_NODES : READ_NODES;
+        int numResponses;
+        //int numResponses = (op == Msg.OP.PUT) ? WRITE_NODES : READ_NODES;
+        switch (op){
+            case PUT:
+                numResponses = WRITE_NODES;
+                break;
+            case GET:
+                numResponses = READ_NODES;
+                break;
+            case RM:
+                numResponses = WRITE_NODES;
+                break;
+            default:
+                numResponses = WRITE_NODES;
+        }
         ArrayList<ReplySystemMsg> replies = new ArrayList<>();
 
         try {

@@ -141,10 +141,10 @@ public class Client {
             }
 
         } catch (SocketException e) {
-            LOGGER.error(ip + " - " + e.getMessage());
+           // LOGGER.error(ip + " - " + e.getMessage());
             return nodesReceived;
         } catch (IOException e) {
-            LOGGER.error(ip + " - "+e);
+            //LOGGER.error(ip + " - "+e);
         }
         return nodesReceived;
     }

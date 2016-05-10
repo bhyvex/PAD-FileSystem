@@ -106,18 +106,22 @@ public class Hasher<T> implements IHasher<T> {
      */
     public ArrayList<T> getNextServers(T server, int number) {
         Preconditions.checkArgument(number > 0 , "number of next servers cannot be negative");
-
+        ByteBuffer myByte = convertAndApplyHash(server);
         ByteBuffer bbNext= convertAndApplyHash(server);
         ArrayList<T> nexts = new ArrayList<>();
         if(serversMap.containsKey(bbNext)) { // contains the bytebuffer of the server passes as argument
             while (number > 0) {
                 bbNext = serversMap.higherKey(bbNext);
-                if (bbNext == null && bbNext !=convertAndApplyHash(server)) { // there is no they greater than the server key.
+                if (bbNext == null ){//& !bbNext.equals(myByte) ){ // there is no keys greater than the server key.
                     bbNext = serversMap.firstKey();
-                    nexts.add(serversMap.get(bbNext));
-                    number--;
+                    if( !nexts.contains(serversMap.get(bbNext))) {//!bbNext.equals(myByte) &&){ //if is not the node server passed as argument
+                        nexts.add(serversMap.get(bbNext));
+                        number--;
+                    }else {  //if is the last server, and the next if myself
+                        bbNext = serversMap.higherKey(bbNext);
+                    }
                 }
-                else if (!nexts.contains(serversMap.get(bbNext) )) {
+                else if (!nexts.contains(serversMap.get(bbNext))&& !bbNext.equals(myByte)) {
                     nexts.add(serversMap.get(bbNext));
                     number--;
                 }

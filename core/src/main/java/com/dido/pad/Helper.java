@@ -21,8 +21,9 @@ public class Helper {
 
     public static final int GOSSIP_PORT = 2000;
 
+    public static  final int NETWORK_SIZE = 4;  //number of nodes in the system,
 
-    public static final boolean CLEAR_DATABASE_INTO_NODE = false; //clear all the databases of the node if true
+    public static final boolean CLEAR_DATABASE_INTO_NODE = false; //true: clear all the databases in the nodes at startUP.
 
 
     public static byte[] fromClientMsgtoByte(RequestClientMsg reqNodes) {
