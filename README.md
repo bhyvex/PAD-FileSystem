@@ -91,8 +91,13 @@ In order to create the images type the commmand:
 
 In order to run the container :
 
-`docker run padfs/core:<version> -ip 127.0.0.1 -id node1 127.0.0.2:node2`
+`docker run padfs/core:<version> com.dido.pad.PadFsNode -ip 127.0.0.1 -id node1 127.0.0.2:node2
+
 
 The client container:
 
-`docker run padfs/cli:<version>  -ip 127.0.0.254 -id client 127.0.0.1:node1`
+`docker run padfs/cli:<version>  com.dido.pad.cli.MainClient -ip 127.0.0.254 -id client 127.0.0.1:node1`
+
+The app (mutlithreaede version) in a docker images:
+
+`docker run padfs/app:<version>  com.dido.pad.app.AppRunner`
