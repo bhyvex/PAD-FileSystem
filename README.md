@@ -46,19 +46,23 @@ where
 
 #### Docker core image
 
-`mvn install -pl core -am`
+`mvn clean install -pl core -am`
+
 Compile and package the `.jar` into the `/target` folder and into the `src/main/docker` folder.
 
 ` mvn docker:build  -pl core -am`
+
 Create the image `padfs/core:<version` starting from theDockerFile and adding the jarnside the image.
 
 In order to run the docker image :
+
 `docker run padfs/core:<version> com.dido.pad.PadFsNode -ip 127.0.0.1 -id node1 127.0.0.2:node2`
 
 ## Cli project
 Donload the latest versio of `cli-<version>.jar`.
 
 Run a client with `-ip 127.0.0.254` (default) and `- id client` (default) and set one seed node `127.0.0.1:node1`.
+
 ` java -cp cli-0.1.jar com.dido.pad.cli.MainClient -ip 127.0.0.254 - id client 127.0.0.1:node1`
 
 `Usage: Client [options] ipSeed:id[:gp] [ipSeed:id[:gp]`
@@ -72,10 +76,12 @@ The seed nodes contacted initially are:
   
 #### Docker client image
 
-`mvn install -pl cli -am`
+`mvn clean install -pl cli -am`
+
 Compile and package the `.jar` into the `/target` folder and into the `src/main/docker` folder.
 `
 ` mvn docker:build  -pl cli -am`
+
 Create the image `padfs/cli:<version` starting from theDockerFile and adding the jarnside the image.
 
 In order to run the docker image :
