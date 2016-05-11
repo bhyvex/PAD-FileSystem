@@ -9,13 +9,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.google.code.gossip.GossipMember;
-import com.sun.org.apache.regexp.internal.RE;
 import org.apache.log4j.Logger;
 
 
 import java.io.IOException;
 import java.net.*;
-import java.time.temporal.ValueRange;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -74,11 +72,6 @@ public class StorageService extends Thread {
         }
 
     }
-/*
-    public List<Node> getReplicasNodes(Node server, int replicas) {
-        return cHasher.getNextServers(server, replicas);
-    }
-    */
 
     public PersistentStorage getStorage() {
         return storage;
@@ -109,9 +102,8 @@ public class StorageService extends Thread {
     @Override
     public void run() {
         // problem if the system is  up: takes as next the first nodes the goes up.
-        int g = cHasher.getAllNodes().size();
-        while (N_REPLICAS < cHasher.getAllNodes().size() && cHasher.getAllNodes().size() < Helper.NETWORK_SIZE) {
-            LOGGER.info(myNode.getIpAddress() + " -  Required ("+ (N_REPLICAS+1) +" < #nodes <=" + Helper.NETWORK_SIZE+ ") nodes, found " + cHasher.getAllNodes().size()+" nodes.");
+        while (cHasher.getAllNodes().size() < Helper.NETWORK_SIZE ){// N_REPLICAS > cHasher.getAllNodes().size()) {
+            StorageService.LOGGER.info(myNode.getIpAddress() + " - Required ("+ (N_REPLICAS+1) +" < #nodes <=" + Helper.NETWORK_SIZE+ ") nodes, found " + cHasher.getAllNodes().size()+" nodes.");
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
@@ -259,7 +251,7 @@ public class StorageService extends Thread {
                 else{
                     String info = " - Impossible to remove  <"+keyRm+" >from local database";
                     LOGGER.info(myNode.getIpAddress() + info);
-                    send(msg.getIpSender(), Helper.QUORUM_PORT, new ReplySystemMsg(Msg.OP.OK, myNode.getIpAddress(), Helper.QUORUM_PORT, info));
+                    send(msg.getIpSender(), Helper.QUORUM_PORT, new ReplySystemMsg(Msg.OP.ERR, myNode.getIpAddress(), Helper.QUORUM_PORT, info));
                 }
         }
     }
@@ -282,7 +274,7 @@ public class StorageService extends Thread {
                     newData.getVersion().increment(myNode.getId());
 
                     List<ReplySystemMsg> replies = askQuorum(newData, Helper.QUORUM_PORT, Msg.OP.PUT);
-                    if(replies.size() < WRITE_NODES ){//|| checkAllOK(replies)){ // UNDO update operation: send old data in a PUT operation
+                    if(replies.size() < WRITE_NODES || !checkAllOK(replies)){ // UNDO update operation: send old data in a PUT operation
                         for(Node n : preferenceNodes){
                         //for(ReplySystemMsg rep : replies){
                             send(n.getIpAddress(), Helper.STORAGE_PORT, new RequestSystemMsg(Msg.OP.PUT,myNode.getIpAddress(),Helper.STORAGE_PORT, oldData));
@@ -412,7 +404,7 @@ public class StorageService extends Thread {
                 String keyRm = msg.getKey();
                 if(storage.containsKey(keyRm)) {
                     List<ReplySystemMsg> replies = askQuorum(storage.get(keyRm),Helper.QUORUM_PORT, Msg.OP.RM);
-                    if(replies.size() < WRITE_NODES ){//|| checkAllOK(replies)){  // not all the writes nodes has responded OR some responds ERR
+                    if(replies.size() < WRITE_NODES || !checkAllOK(replies)){  // not all the writes nodes has responded OR some responds ERR
                         for(Node n : preferenceNodes){
                         //for(ReplySystemMsg rep: replies){  //new RequestSystemMsg(Msg.OP.PUT,myNode.getIpAddress(),Helper.STORAGE_PORT, oldData)
                             send(n.getIpAddress(), Helper.STORAGE_PORT, new RequestSystemMsg(Msg.OP.PUT,myNode.getIpAddress(),Helper.STORAGE_PORT,storage.get(keyRm)));
@@ -449,7 +441,7 @@ public class StorageService extends Thread {
 
     private boolean checkAllOK(List<ReplySystemMsg> replies) {
         for(ReplySystemMsg msg : replies){
-            if(msg.getOperation().equals(Msg.OP.ERR))
+            if(msg.getOperation() == Msg.OP.ERR)
                 return false;
         }
         return true;
@@ -496,7 +488,6 @@ public class StorageService extends Thread {
 
     public List<ReplySystemMsg> askQuorum(Versioned vData, int listenPort, Msg.OP op) {
         RequestSystemMsg reqQuorum;
-
 
         switch (op){
             case PUT:

@@ -24,7 +24,7 @@ public class AppRunner {
     public static void main(String[] args) throws IOException, InterruptedException {
         //startup gossip member
         GossipSettings settings = new GossipSettings();
-        int seedNodes = 2;
+        int seedNodes = 1;
         List<GossipMember> startupMembers = new ArrayList<>();
         for (int i = 1; i < seedNodes + 1; ++i) {
             startupMembers.add(new RemoteGossipMember("127.0.0." + i, Helper.GOSSIP_PORT, "node" + i));

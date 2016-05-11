@@ -150,7 +150,7 @@ public class Cli {
 
     private void sendRmAndWait(String rmkey) {
         Node n = getcHasher().getServerForData(rmkey);
-        RequestAppMsg msgRm = new RequestAppMsg(Msg.OP.RM,rmkey,"");
+        RequestAppMsg msgRm = new RequestAppMsg<>(Msg.OP.RM,rmkey,"");
         msgRm.setIpSender(client.getIpAddress());
         String ip = n.getIpAddress();
 

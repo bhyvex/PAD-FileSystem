@@ -47,7 +47,7 @@ public class Hasher<T> implements IHasher<T> {
     }
 
 
-    private ByteBuffer convertAndApplyHash(T server) {
+    synchronized private ByteBuffer convertAndApplyHash(T server) {
         byte[] bucketNameInBytes = hashFunction.hash(nodeToByteConverter.convert(server));
         return ByteBuffer.wrap(hashFunction.hash(bucketNameInBytes));
     }
@@ -83,7 +83,7 @@ public class Hasher<T> implements IHasher<T> {
         return  new ArrayList<>(serversMap.values());
     }
 
-    public boolean containsNode(T node) {
+    synchronized public boolean containsNode(T node) {
         ByteBuffer bbServerVirtuals = convertAndApplyHash(node);
         return this.serversMap.containsKey(bbServerVirtuals);
     }
@@ -104,7 +104,7 @@ public class Hasher<T> implements IHasher<T> {
      * @param server starting node server
      * @return list of Nodes
      */
-    public ArrayList<T> getNextServers(T server, int number) {
+    synchronized public ArrayList<T> getNextServers(T server, int number) {
         Preconditions.checkArgument(number > 0 , "number of next servers cannot be negative");
         ByteBuffer myByte = convertAndApplyHash(server);
         ByteBuffer bbNext= convertAndApplyHash(server);
@@ -131,7 +131,7 @@ public class Hasher<T> implements IHasher<T> {
     }
 
 
-    public ArrayList<T> getPreviousServer(T server, int number){
+    synchronized public ArrayList<T> getPreviousServer(T server, int number){
        // ArrayList<ByteBuffer> virtuals = virtualForServer.get(server);
 
         ByteBuffer bbPrevious = convertAndApplyHash(server);     // first entry is the Bytebuffer of the  physical server.

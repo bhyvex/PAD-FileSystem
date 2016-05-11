@@ -7,7 +7,7 @@
     <groupId>com.dido.code.pad</groupId>
     <artifactId>pad-fs</artifactId>
     <packaging>pom</packaging>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0</version>
     <description>PAD File system project a.a 2015-16</description>
 
     <modules>
@@ -39,6 +39,19 @@
 
     <build>
             <plugins>
+
+                <!-- copy into local folder -->
+
+                <!--copy the -jar into /tmp folder for docker image -->
+            <!-- <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>2.3.1</version>
+                    <configuration>
+                        <outputDirectory>/tmp</outputDirectory>
+                    </configuration>
+                </plugin>-->
+
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
@@ -49,27 +62,26 @@
                     </configuration>
                 </plugin>
                 <!-- Maven Assembly Plugin -->
+
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-assembly-plugin</artifactId>
                     <version>2.4.1</version>
+
                     <configuration>
-                        <!-- get all project dependencies -->
                         <descriptorRefs>
                             <descriptorRef>jar-with-dependencies</descriptorRef>
                         </descriptorRefs>
-                        <!-- MainClass in mainfest make a executable jar -->
                         <archive>
                             <manifest>
-                                <mainClass>com.dido.pad.PadFsNode</mainClass>
+                                <mainClass>${project.groupId}.PadFsNode</mainClass>
                             </manifest>
                         </archive>
-
                     </configuration>
+
                     <executions>
                         <execution>
                             <id>make-assembly</id>
-                            <!-- bind to the packaging phase -->
                             <phase>package</phase>
                             <goals>
                                 <goal>single</goal>
@@ -79,26 +91,134 @@
                 </plugin>
 
 
+        <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+             <version>1.2.1</version>
+             <executions>
+                 <execution>
+                     <goals>
+                         <goal>java</goal>
+                     </goals>
+                  </execution>
+             </executions>
+           <configuration>
+                <mainClass>com.dido.pad.PadFsNode</mainClass>
+            </configuration>
+         </plugin>
+
+                <!-- pugin for knowing the main parent -->
+                <!-- Directory plugin to find parent root directory absolute path -->
                 <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>exec-maven-plugin</artifactId>
-                     <version>1.2.1</version>
-                     <executions>
-                         <execution>
-                             <goals>
-                                 <goal>java</goal>
-                             </goals>
-                          </execution>
-                     </executions>
-                   <configuration>
-                        <mainClass>com.dido.pad.PadFsNode</mainClass>
-                    </configuration>
-                 </plugin>
+                    <groupId>org.commonjava.maven.plugins</groupId>
+                    <artifactId>directory-maven-plugin</artifactId>
+                    <version>0.1</version>
+                    <executions>
+                        <execution>
+                            <id>directories</id>
+                            <goals>
+                                <goal>highest-basedir</goal>
+                            </goals>
+                            <phase>initialize</phase>
+                            <configuration>
+                                <property>main.basedir</property>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+
+        <!--Maven to docker plugin, https://fabric8io.github.io/docker-maven-plugin/installation.html -->
+               <plugin>
+                    <groupId>io.fabric8</groupId>
+                    <artifactId>docker-maven-plugin</artifactId>
+                    <version>0.15.1</version>
+
+                    <configuration>
+                        <dockerHost>unix:///var/run/docker.sock</dockerHost>
+                        <useColor>true</useColor>
+
+                    <images>
+                     <!--A single's image configuration -->
+                        <image>
+                            <name>padfs/${project.name}:${project.version}</name>
+                            <build>
+                                <dockerFileDir>${project.basedir}/src/main/docker</dockerFileDir>
+                                <dockerFile>Dockerfile</dockerFile>
+
+                            </build>
+                        </image>
+                </images>
+        </configuration>
+
+        <!--onnect start/stop to pre- and post-integration-test phase, respectively if you want to start
+           your docker containers during integration tests-->
+                    <executions>
+                        <!--execution>
+                           <id>start</id>
+                            <phase>pre-integration-test</phase>
+                            <goals>
+                              &lt;!&ndash; "build" should be used to create the images with the artifact &ndash;&gt;
+                                <goal>build</goal>
+                                <goal>start</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>stop</id>
+                            <phase>post-integration-test</phase>
+                            <goals>
+                                <goal>stop</goal>
+                            </goals>
+                        </execution>-->
+                    </executions>
+                </plugin>
+
+                <!--copy al the jar into /tmp folder for Docker -->
+                <plugin>
+                    <artifactId>maven-antrun-plugin</artifactId>
+                    <version>1.7</version>
+                    <executions>
+                        <execution>
+                            <phase>install</phase>
+                            <configuration>
+                                <tasks>
+                                    <!--copy al the jar into /tmp folder for Docker -->
+                                    <copy todir="${project.basedir}/src/main/docker">
+                                        <fileset dir="${project.basedir}/target/">
+                                            <include name="**/*jar-with-dependencies.jar"/>
+                                        </fileset>
+                                        <globmapper from="*" to="${project.name}.jar"/>
+                                    </copy>
+
+                                </tasks>
+                            </configuration>
+                            <goals>
+                                <goal>run</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
             </plugins>
     </build>
 
     <dependencies>
-
+   <!--     &lt;!&ndash; my sub module dependency &ndash;&gt;
+        <dependency>
+            <groupId>com.dido.code.pad</groupId>
+            <artifactId>app</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.dido.code.pad</groupId>
+            <artifactId>core</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.dido.code.pad</groupId>
+            <artifactId>cli</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+-->
         <!--<dependency>-->
             <!--<groupId>it.cnr.isti.hpclab</groupId>-->
             <!--<artifactId>gossip</artifactId>-->
