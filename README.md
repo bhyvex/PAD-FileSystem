@@ -17,9 +17,10 @@ The pad-fs project is divided in the sub projects:
 The project is develped using `Maven`.
 The command: 
 
-`mvn package`
+`mvn install` will:
+- generate the `*.jar`in the  `/target` folder in each subprojects (app.core,app)
+- cpy the `.jar` in to the `/src/main/docker` folder in each sub project (used for the docker build).
 
-creates the `jar` packages of all the three projects under the folder `target/`.
 
 ## How to run the projects
 There are three ways to rrn the project:
@@ -63,7 +64,7 @@ The seed nodes contacted initially are:
   
 #### How to run the Client node
 Run a client with `-ip 127.0.0.254` (default) and `- id client` (default) and set one seed node `127.0.0.1:node1`.
-` java -cp cli-0.1.jar com.dido.pad.cli.MainClient 127.0.0.1:node1`
+` java -cp cli-0.1.jar com.dido.pad.cli.MainClient -ip 127.0.0.254 - id client 127.0.0.1:node1`
 
 
 ### App project
@@ -83,3 +84,15 @@ usage:
 ```
 
 
+### Docker images
+It is possible to create the images starting from the DockerFile inside each project.
+In order to create the images type the commmand:
+`mvn docker:build`
+
+In order to run the container :
+
+`docker run padfs/core:<version> -ip 127.0.0.1 -id node1 127.0.0.2:node2`
+
+The client container:
+
+`docker run padfs/cli:<version>  -ip 127.0.0.254 -id client 127.0.0.1:node1`
