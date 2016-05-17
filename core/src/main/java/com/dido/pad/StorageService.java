@@ -25,9 +25,9 @@ public class StorageService extends Thread {
 
     public static final Logger LOGGER = Logger.getLogger(StorageService.class);
 
-    public int N_REPLICAS = 2;   //  the length of preference list: the backups node after the master in clockwise direction
-    public int WRITE_NODES = 2;  // number of nodes after the master tha must return a write response
-    public int READ_NODES = 1;   // number of nodes that must read that must return a read response
+    public int SIZE_PREF_LIST = Helper.NUM_REPLICAS-1;    //  the length of preference list(without master): the backups node  in clockwise direction
+    public int WRITE_REPLICA_NODES = Helper.WRITE_NODES -1; // number of nodes replica (after the master) that must return a write response
+    public int READ_REPLICA_NODES = Helper.READ_NODES -1;   // number of nodes replica (after the master) that must read that must return a read response
 
     private Hasher<Node> cHasher;
     private PersistentStorage storage;
@@ -52,11 +52,9 @@ public class StorageService extends Thread {
 
         // ADD seed nodes to the node storage service
         for (GossipMember member : seedNodes) {
-            //TODO problem change a GossipMember to a Node
             Node n = new Node(member);
-
             // if (!cHasher.containsNode(n))
-                cHasher.addServer(n);
+            cHasher.addServer(n);
         }
 
         keepRunning = new AtomicBoolean(true);
@@ -102,27 +100,27 @@ public class StorageService extends Thread {
     @Override
     public void run() {
         // problem if the system is  up: takes as next the first nodes the goes up.
-        while (cHasher.getAllNodes().size() < Helper.NETWORK_SIZE ){// N_REPLICAS > cHasher.getAllNodes().size()) {
-            StorageService.LOGGER.info(myNode.getIpAddress() + " - Required ("+ (N_REPLICAS+1) +" < #nodes <=" + Helper.NETWORK_SIZE+ ") nodes, found " + cHasher.getAllNodes().size()+" nodes.");
+        while (cHasher.getAllNodes().size() < Helper.NETWORK_SIZE ){// SIZE_PREF_LIST > cHasher.getAllNodes().size()) {
+            StorageService.LOGGER.info(myNode.getIpAddress() + " - Required ("+ (SIZE_PREF_LIST +1) +" < #nodes <=" + Helper.NETWORK_SIZE+ ") nodes, found " + cHasher.getAllNodes().size()+" nodes.");
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
-        preferenceNodes = cHasher.getNextServers(myNode, N_REPLICAS);
+        preferenceNodes = cHasher.getNextServers(myNode, SIZE_PREF_LIST);
 
         while (keepRunning.get()) {
 /*            // problem if the system is  up: takes as next the first nodes the goes up.
-            while (N_REPLICAS > cHasher.getAllNodes().size()) {
-                StorageService.LOGGER.info(myNode.getIpAddress() + " -  Required " + N_REPLICAS + " backup nodes, found " + cHasher.getAllNodes().size());
+            while (SIZE_PREF_LIST > cHasher.getAllNodes().size()) {
+                StorageService.LOGGER.info(myNode.getIpAddress() + " -  Required " + SIZE_PREF_LIST + " backup nodes, found " + cHasher.getAllNodes().size());
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
-            preferenceNodes = cHasher.getNextServers(myNode, N_REPLICAS);
+            preferenceNodes = cHasher.getNextServers(myNode, SIZE_PREF_LIST);
 */
             try {
                 byte[] buff = new byte[udpServer.getReceiveBufferSize()];
@@ -274,7 +272,7 @@ public class StorageService extends Thread {
                     newData.getVersion().increment(myNode.getId());
 
                     List<ReplySystemMsg> replies = askQuorum(newData, Helper.QUORUM_PORT, Msg.OP.PUT);
-                    if(replies.size() < WRITE_NODES || !checkAllOK(replies)){ // UNDO update operation: send old data in a PUT operation
+                    if(replies.size() < WRITE_REPLICA_NODES || !checkAllOK(replies)){ // UNDO update operation: send old data in a PUT operation
                         for(Node n : preferenceNodes){
                         //for(ReplySystemMsg rep : replies){
                             send(n.getIpAddress(), Helper.STORAGE_PORT, new RequestSystemMsg(Msg.OP.PUT,myNode.getIpAddress(),Helper.STORAGE_PORT, oldData));
@@ -293,9 +291,9 @@ public class StorageService extends Thread {
                     d.getVersion().increment(myNode.getId());
                     storage.update(d);
                   //  send(msg.getIpSender(),Helper.STORAGE_PORT,new ReplyAppMsg(Msg.OP.OK, " UPDATE <" + msg.getKey()+":"+msg.getValue()+"> "+d.getVersion()));
-                    //sent to all WRITE_NODES
+                    //sent to all WRITE_REPLICA_NODES
                     List<ReplySystemMsg> rep = askQuorum(d, Helper.QUORUM_PORT, Msg.OP.PUT);
-                    if(rep.size() < WRITE_NODES)
+                    if(rep.size() < WRITE_REPLICA_NODES)
                         send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.ERR, " Error: PUT not all the WRITE NODES  have responded"));
                     else
                         send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.OK, " UPDATE  <" + msg.getKey() + ":" + msg.getValue() + ">"));
@@ -303,7 +301,7 @@ public class StorageService extends Thread {
                 } else { // PUT new object
                     Versioned vData = new Versioned(new StorageData<>(msg.getKey(), msg.getValue()));
                     List<ReplySystemMsg> replies = askQuorum(vData, Helper.QUORUM_PORT, Msg.OP.PUT);
-                    if(replies.size() < WRITE_NODES){
+                    if(replies.size() < WRITE_REPLICA_NODES){
                         for(Node n : preferenceNodes){
                         //for(ReplySystemMsg rep: replies){ // sent RM to all the nodes in the preference list
                             send(n.getIpAddress(), Helper.STORAGE_PORT, new RequestSystemMsg(Msg.OP.RM,myNode.getIpAddress(),Helper.STORAGE_PORT,vData.getData().getKey()));
@@ -321,9 +319,9 @@ public class StorageService extends Thread {
                     this.storage.put(vData);
                     StorageService.LOGGER.info(this.myNode.getIpAddress() + " - Inserted <" + msg.getKey() + ":" + msg.getValue() + "> into local database");
 
-                    //sent to all WRITE_NODES the new object received and wait the selection
+                    //sent to all WRITE_REPLICA_NODES the new object received and wait the selection
                     List<ReplySystemMsg> rep = askQuorum(vData, Helper.QUORUM_PORT, Msg.OP.PUT);
-                    if(rep.size() < WRITE_NODES)//-1
+                    if(rep.size() < WRITE_REPLICA_NODES)//-1
                         send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.ERR, " Error: PUT not all the WRITE NODES  have responded"));
                     else
                         send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.OK, " PUT  <" + msg.getKey() + ":" + msg.getValue() + ">"));
@@ -337,13 +335,13 @@ public class StorageService extends Thread {
                     Versioned myData = storage.get(key);
                     List<ReplySystemMsg> replies = askQuorum(myData,Helper.QUORUM_PORT, Msg.OP.GET);
 
-                    if(replies.isEmpty() || replies.size() < READ_NODES) {
+                    if(replies.isEmpty() || replies.size() < READ_REPLICA_NODES) {
                         send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.ERR, " Error: GET has note received version from all the READ nodes"));
                         StorageService.LOGGER.info(myNode.getIpAddress() + " - ERR  has not received all the READ nodes version to"+msg.getIpSender());
                     }
 
                     else {
-                        for (ReplySystemMsg msgReply :replies) {  //for all READ_NODES version
+                        for (ReplySystemMsg msgReply :replies) {  //for all READ_REPLICA_NODES version
                             if(!msgReply.getOperation().equals(Msg.OP.ERR)) {
                                 Versioned bkuData = msgReply.getData();
                                 switch (bkuData.compareTo(myData)) {
@@ -404,7 +402,7 @@ public class StorageService extends Thread {
                 String keyRm = msg.getKey();
                 if(storage.containsKey(keyRm)) {
                     List<ReplySystemMsg> replies = askQuorum(storage.get(keyRm),Helper.QUORUM_PORT, Msg.OP.RM);
-                    if(replies.size() < WRITE_NODES || !checkAllOK(replies)){  // not all the writes nodes has responded OR some responds ERR
+                    if(replies.size() < WRITE_REPLICA_NODES || !checkAllOK(replies)){  // not all the writes nodes has responded OR some responds ERR
                         for(Node n : preferenceNodes){
                         //for(ReplySystemMsg rep: replies){  //new RequestSystemMsg(Msg.OP.PUT,myNode.getIpAddress(),Helper.STORAGE_PORT, oldData)
                             send(n.getIpAddress(), Helper.STORAGE_PORT, new RequestSystemMsg(Msg.OP.PUT,myNode.getIpAddress(),Helper.STORAGE_PORT,storage.get(keyRm)));
@@ -536,26 +534,26 @@ public class StorageService extends Thread {
         DatagramSocket udpQuorum;  //server listen Quorum selection
 
         int numResponses;
-        //int numResponses = (op == Msg.OP.PUT) ? WRITE_NODES : READ_NODES;
+        //int numResponses = (op == Msg.OP.PUT) ? WRITE_REPLICA_NODES : READ_REPLICA_NODES;
         switch (op){
             case PUT:
-                numResponses = WRITE_NODES;
+                numResponses = WRITE_REPLICA_NODES;
                 break;
             case GET:
-                numResponses = READ_NODES;
+                numResponses = READ_REPLICA_NODES;
                 break;
             case RM:
-                numResponses = WRITE_NODES;
+                numResponses = WRITE_REPLICA_NODES;
                 break;
             default:
-                numResponses = WRITE_NODES;
+                numResponses = WRITE_REPLICA_NODES;
         }
         ArrayList<ReplySystemMsg> replies = new ArrayList<>();
 
         try {
             udpQuorum = new DatagramSocket(listenPort);
             //TODO insert timeout into configuration file
-            udpQuorum.setSoTimeout(3000);
+            udpQuorum.setSoTimeout(Helper.TIMEOUT_QUORUM);
 
             //wait the selection
             for (int j = 0; j < numResponses; j++) {

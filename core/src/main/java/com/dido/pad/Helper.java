@@ -14,6 +14,10 @@ import java.nio.ByteBuffer;
  */
 public class Helper {
 
+    public static final int NUM_REPLICAS = 3;   // number of replicas (master + 2 backups)
+    public static final int WRITE_NODES = 2;    // (master 1 backup)
+    public  static final int READ_NODES = 2;    // (master 1 backup)
+
     public static final int STORAGE_PORT = 3000;
     public static final int QUORUM_PORT = 3001;
     public static final int CLIENT_PORT = 3002;
@@ -24,6 +28,8 @@ public class Helper {
     public static  final int NETWORK_SIZE = 4;  //number of nodes in the system,
 
     public static final boolean CLEAR_DATABASE_INTO_NODE = false; //true: clear all the databases in the nodes at startUP.
+
+    public static final int TIMEOUT_QUORUM = 1000;
 
 
     public static byte[] fromClientMsgtoByte(RequestClientMsg reqNodes) {
