@@ -95,7 +95,7 @@ Build the image `padfs/cli:<version>` starting from the DockerFile and adding th
 
 Run the container:
 
-`docker run padfs/cli:<version> com.dido.pad.cli.MainClient -ip 127.0.0.254 - id client 127.0.0.1:node1`
+`docker run padfs/cli:<version> com.dido.pad.cli.MainClient -ip 127.0.0.254 -id client 127.0.0.1:node1`
 
 ### App project
 Is the easy way to run a set of four storage nodes into a single machine (multi threaded).
