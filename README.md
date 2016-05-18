@@ -89,8 +89,9 @@ Go inside the folder:
 `cd cli`
 
 Build the image `padfs/cli:<version>` starting from the DockerFile and adding the jar inside the image.
-`
-` mvn docker:build`
+
+
+`mvn docker:build`
 
 Run the container:
 
