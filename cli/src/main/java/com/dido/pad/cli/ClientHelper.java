@@ -12,6 +12,9 @@ public class ClientHelper {
 
     public static int TIMEOUT_INTERVAL = 3000; //milliseconds timeout interval fro discovery  messages
 
+    public static int TIMEOUT_TO_STORAGE_NODE = 5000;
+
+
 
 
 }

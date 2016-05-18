@@ -46,12 +46,14 @@ public class AppRunner {
 
         BufferedReader bufferReader = new BufferedReader(new InputStreamReader(System.in));
 
-        String help = " usage: \n " +
-                "down ip  : the node with ip  goes down \n" +
-                "up  x : the node with ip (127.0.0.x) goes up ";
+        String help = "AppRunner usage: \n " +
+                "\tdown ip  : the node with ip  goes down\n" +
+                "\tup  x    : the node with ip (127.0.0.x) goes up\n"+
+                "\tdisconnect  ip  : disconnect the node with ip from the network\n"+
+                "\tconnect ip    : connect the node ip fro the network";
 
         while(true) {
-            System.out.println("\n Insert a command [h for usage message]...");
+            System.out.println("\nApp Runner : insert a command [h for usage message]...\n");
             String input = null;
             try {
                 input = bufferReader.readLine();
@@ -70,8 +72,20 @@ public class AppRunner {
                         clients.put("127.0.0."+lastAddress,node);
                         node.start();
                         break;
-                    case ("list"):
-                        //c.list(cmds[1]);
+                    case ("disconnect"):
+                        String nodeDisconnect= cmds[1];
+                        if(clients.containsKey(nodeDisconnect)){
+                            clients.get(nodeDisconnect).disconnect();
+                        } else
+                        System.out.println("node is not present");
+                        break;
+                    case ("connect"):
+                        String nodeConnect= cmds[1];
+                        if(clients.containsKey(nodeConnect)){
+                            clients.get(nodeConnect).connect();
+                        }else
+                            System.out.println("node is not present");
+
                         break;
                     case ("h"):
                         System.out.println(help);

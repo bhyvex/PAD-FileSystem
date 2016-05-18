@@ -88,6 +88,14 @@ public class Node {
         _storageService.start();
     }
 
+    public void connect() {
+        _storageService.connect();
+    }
+
+    public void disconnect() {
+        _storageService.disconnect();
+    }
+
     public GossipManager getGossipmanager() {
         return _gossipService.get_gossipManager();
     }
@@ -178,4 +186,7 @@ public class Node {
     public StorageService get_storageService() {
         return _storageService;
     }
+
+
+
 }

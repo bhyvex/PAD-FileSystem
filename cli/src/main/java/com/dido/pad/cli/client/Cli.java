@@ -2,6 +2,7 @@ package com.dido.pad.cli.client;
 
 import com.dido.pad.Helper;
 import com.dido.pad.Node;
+import com.dido.pad.cli.ClientHelper;
 import com.dido.pad.hashing.DefaultFunctions;
 import com.dido.pad.hashing.Hasher;
 import com.dido.pad.messages.*;
@@ -44,8 +45,6 @@ public class Cli {
         // ADD seed nodes to the node storage service
         for (GossipMember member : seedNodes) {
             Node n = new Node(member);
-            //TODO problem trasform a GossipMember to a Node
-          //  if (!cHasher.containsNode(n))
                 cHasher.addServer(n);
         }
 
@@ -54,6 +53,7 @@ public class Cli {
             SocketAddress sAddress = new InetSocketAddress(client.getIpAddress(), Helper.STORAGE_PORT);
             LOGGER.info(client.getIpAddress() + "- initialized on portStorage " + Helper.STORAGE_PORT);
             udpServer = new DatagramSocket(sAddress);
+            udpServer.setSoTimeout(ClientHelper.TIMEOUT_TO_STORAGE_NODE);
         } catch (SocketException e) {
             LOGGER.error(this.client.getIpAddress() + " - at init-" + e);
             keepRunning.set(false);
@@ -181,7 +181,8 @@ public class Cli {
             manageAppReply(msgReceived);
 
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.info("RM command "+e.getMessage());
+            //e.printStackTrace();
         }
 
     }
@@ -230,7 +231,8 @@ public class Cli {
             manageAppReply(msgReceived);
 
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.info("LIST command "+e.getMessage());
+            //e.printStackTrace();
         }
     }
 
@@ -268,7 +270,7 @@ public class Cli {
             manageAppReply(msgReceived);
 
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.info("PUT command "+e.getMessage());
         }
 
     }
@@ -314,7 +316,8 @@ public class Cli {
             }
 
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.info("GET command "+e.getMessage());
+
         }
 
     }
