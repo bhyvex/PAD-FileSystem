@@ -355,7 +355,7 @@ public class StorageService extends Thread {
                                 Versioned bkuData = msgReply.getData();
                                 switch (bkuData.compareTo(myData)) {
                                     case BEFORE: //my data version is newer than the backup version
-                                        LOGGER.info(myNode.getIpAddress() + " -  my version is BEFORE with <" + msgReply.getData().getData().getKey() + " : " + msgReply.getData().getVersion() + " > from " + msgReply.getIpSender());
+                                        LOGGER.info(myNode.getIpAddress() + " - My version is BEFORE with <" + msgReply.getData().getData().getKey() + " : " + msgReply.getData().getVersion() + " > from " + msgReply.getIpSender());
                                         send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.OK, " GET " + myData.getData().toString()));
                                         //for (Node backup : preferenceNodes) {
                                         for (Node backup : cHasher.getNextServers(myNode, SIZE_PREF_LIST)) {
@@ -363,12 +363,12 @@ public class StorageService extends Thread {
                                         }
                                         break;
                                     case AFTER: //my data version is older than the backup version
-                                        LOGGER.info(myNode.getIpAddress() + " - my version is AFTER with<" + msgReply.getData().getData().getKey() + "> version: " + msgReply.getData().getVersion() + " from " + msgReply.getIpSender());
+                                        LOGGER.info(myNode.getIpAddress() + " - My version is AFTER with<" + msgReply.getData().getData().getKey() + "> version: " + msgReply.getData().getVersion() + " from " + msgReply.getIpSender());
                                         myData.mergeTo(bkuData);
                                         send(msg.getIpSender(), Helper.STORAGE_PORT, new ReplyAppMsg(Msg.OP.OK, " GET " + bkuData.getData().toString()));
                                         break;
                                     case CONCURRENT: //concurrent version must be resolved by the client
-                                        LOGGER.info(myNode.getIpAddress() + " - my version is CONCURRENT with <" + msgReply.getData().getData().getKey() + "> version: " + msgReply.getData().getVersion() + " from " + msgReply.getIpSender());
+                                        LOGGER.info(myNode.getIpAddress() + " - My version is CONCURRENT with <" + msgReply.getData().getData().getKey() + "> version: " + msgReply.getData().getVersion() + " from " + msgReply.getIpSender());
                                         String selection = " 1 : " + myData.getData().toString() + " \n 2 : " + bkuData.getData().toString();
                                         Msg conflict = new RequestConflictMsg(Msg.TYPE.REQUEST, Msg.OP.GET, myNode.getIpAddress(), Helper.STORAGE_PORT, selection);
                                         sendConflict(msg.getIpSender(), conflict, Helper.CONFLICT_LISTEN_PORT);

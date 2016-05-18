@@ -28,6 +28,7 @@ public class Node {
 
     private int portStorage;
     private int portGossip;
+
     private int numReplicas;
 
 
@@ -92,8 +93,7 @@ public class Node {
         _storageService.connect();
     }
 
-    public void disconnect() {
-        _storageService.disconnect();
+    public void disconnect() { _storageService.disconnect();
     }
 
     public GossipManager getGossipmanager() {

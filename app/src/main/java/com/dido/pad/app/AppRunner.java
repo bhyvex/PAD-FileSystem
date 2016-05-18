@@ -75,14 +75,14 @@ public class AppRunner {
                     case ("disconnect"):
                         String nodeDisconnect= cmds[1];
                         if(clients.containsKey(nodeDisconnect)){
-                            clients.get(nodeDisconnect).disconnect();
+                            (clients.get(nodeDisconnect)).disconnect();
                         } else
                         System.out.println("node is not present");
                         break;
                     case ("connect"):
                         String nodeConnect= cmds[1];
                         if(clients.containsKey(nodeConnect)){
-                            clients.get(nodeConnect).connect();
+                            (clients.get(nodeConnect)).connect();
                         }else
                             System.out.println("node is not present");
 

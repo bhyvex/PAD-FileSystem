@@ -24,6 +24,7 @@ public class TestQuorum {
     int clusterMembers = 3;
 
 
+
     public TestQuorum(){
         startupMembers.add(new RemoteGossipMember("127.0.0.1", Helper.GOSSIP_PORT, "node1"));
         for (int i = 1; i < clusterMembers + 1; ++i) {
@@ -40,7 +41,7 @@ public class TestQuorum {
     }
 
 
-   //@Test
+    @Test
     public void testGetMerge() {
 
        try {

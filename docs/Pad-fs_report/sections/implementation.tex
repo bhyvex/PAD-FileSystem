@@ -10,6 +10,11 @@ The APIs exposed to the user are:
 	\item \emph{rm(key)}: removes the key and the associated value in all the node where key is stored.
 \end{itemize}
 
+\subsection{Aborting operations}
+Tha \emph{Pad-fs} use a quorum system. If the quorum system is not respected,the operation are aborted.
+As example during a \emph{put} operation:
+\begin{•}
+
 \subsubsection*{Get operation}
 The get(k) retrieve the value associated with the key k.
 The figure~\ref{fig:get} shows the steps of a successfully get operation.

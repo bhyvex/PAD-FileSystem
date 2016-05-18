@@ -81,7 +81,8 @@ public class Client {
 
                 Node node = clientService.getRandomNode();
 
-                byte buf[] = Helper.fromClientMsgtoByte(reqNodes);
+                //byte buf[] = Helper.fromClientMsgtoByte(reqNodes);
+                byte buf[] = Helper.fromAppMsgtoByte(reqNodes);
                 InetAddress destAddress = InetAddress.getByName(node.getIpAddress());
                 DatagramPacket packet = new DatagramPacket(buf, buf.length, destAddress, Helper.STORAGE_PORT);
                 clientSocket.send(packet);

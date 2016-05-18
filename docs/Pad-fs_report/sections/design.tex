@@ -5,9 +5,9 @@ In this section are listed the main characteristics of \emph{Pad-fs} and the pro
 \begin{itemize}
 \item \textbf{Partitioning}. In order to scale incrementally pad-fs use \textit{consistent hashing} . The hash function can be defined by the programmer, by default \emph{Pad-fs} uses \textit{SHA1} hash function  for hashing both the data and the nodes.
 
-\item \textbf{Replication}. In \emph{Pad-fs} a data is replicated in multiple distinct nodes: into the master node and into \texttt{N\_REPLICAS} backup nodes in the clockwise direction. The master node is responsable to manage the keys. \texttt{N\_REPLICAS} is the variable that indicates the number of nodes after the master node that has to receive a copy of the data (by default \texttt{N\_REPLICAS}=2).
+\item \textbf{Replication}. In \emph{Pad-fs} a data is replicated in \texttt{N\_REPLICAS} distinct nodes: the master node and backups nodes in the clockwise direction. The master node is responsable to manage the keys. \texttt{N\_REPLICAS} is the variable that indicates the number of nodes that receive a copy of the data (by default \texttt{N\_REPLICAS}=3).
 
-\item \textbf{Quorum system}. It is used for handling temporary failures. \texttt{WRITE\_NODES} are the number of backups nodes that must responds successfully at at put operation. \texttt{READ\_NODES} are the number of backups nodes that must terminates successfully to a get operation. If not all the backups responds a error message is shown to the user and the operation is not performed (by default \texttt{WRITE\_NODES}=1, and  \texttt{READ\_NODES} = 2)
+\item \textbf{Quorum system}. It is used for handling temporary failures. \texttt{WRITE\_NODES} are the number of backups nodes that must responds successfully at at put operation. \texttt{READ\_NODES} are the number of backups nodes that must terminates successfully to a get operation. If not all the backups responds a error message is shown to the user and the operation is not performed (by default \texttt{WRITE\_NODES}=2, and  \texttt{READ\_NODES} = 2)
 
 \item \textbf{Versioning}. Pad-fs uses vector clocks associated with the data in order to resolve inconsistency. The vector clock is a pair  <id:n>  where id is the node id and \textit{n} is an integer number. 
 
