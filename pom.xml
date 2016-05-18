@@ -39,19 +39,6 @@
 
     <build>
             <plugins>
-
-                <!-- copy into local folder -->
-
-                <!--copy the -jar into /tmp folder for docker image -->
-            <!-- <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-jar-plugin</artifactId>
-                    <version>2.3.1</version>
-                    <configuration>
-                        <outputDirectory>/tmp</outputDirectory>
-                    </configuration>
-                </plugin>-->
-
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
@@ -62,7 +49,6 @@
                     </configuration>
                 </plugin>
                 <!-- Maven Assembly Plugin -->
-
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-assembly-plugin</artifactId>
@@ -128,7 +114,7 @@
                 </plugin>
 
         <!--Maven to docker plugin, https://fabric8io.github.io/docker-maven-plugin/installation.html -->
-               <plugin>
+               <!--<plugin>
                     <groupId>io.fabric8</groupId>
                     <artifactId>docker-maven-plugin</artifactId>
                     <version>0.15.1</version>
@@ -138,7 +124,7 @@
                         <useColor>true</useColor>
 
                     <images>
-                     <!--A single's image configuration -->
+                     &lt;!&ndash;A single's image configuration &ndash;&gt;
                         <image>
                             <name>padfs/${project.name}:${project.version}</name>
                             <build>
@@ -147,13 +133,13 @@
 
                             </build>
                         </image>
-                </images>
-        </configuration>
+                    </images>
+                     </configuration>
 
-        <!--onnect start/stop to pre- and post-integration-test phase, respectively if you want to start
-           your docker containers during integration tests-->
+        &lt;!&ndash;onnect start/stop to pre- and post-integration-test phase, respectively if you want to start
+           your docker containers during integration tests&ndash;&gt;
                     <executions>
-                        <!--execution>
+                        &lt;!&ndash;execution>
                            <id>start</id>
                             <phase>pre-integration-test</phase>
                             <goals>
@@ -168,11 +154,11 @@
                             <goals>
                                 <goal>stop</goal>
                             </goals>
-                        </execution>-->
+                        </execution>&ndash;&gt;
                     </executions>
-                </plugin>
+                </plugin>-->
 
-                <!--copy al the jar into /tmp folder for Docker -->
+                <!--copy al the jar into folder for Docker image-->
                 <plugin>
                     <artifactId>maven-antrun-plugin</artifactId>
                     <version>1.7</version>
