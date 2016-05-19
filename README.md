@@ -37,23 +37,19 @@ The pad-fs project is divided in three sub projects:
 ## <a name="run"></a> How to run the project
 
 There are three ways to run the project
-- [Distributed](#runD) Run with remote nodes.
+- [Distributed version](#runD)
 - [Multithreaded](#app) the simulation in a single machine (multithreaded)
 - [Docker](#docker) Creates Docker images (core and client) and run the conatiners in Docker network.
 
 
-#### <a name="runD"></a> Run distributed version 
-IN order to run  in a  distributed environment:
-- Download the `core-<version>.jar` in all the remote machines where you want to executes tha storage node.
-- Download the `cli-<version>.jar` i the machine where you want execute the client.
-- Run all the nodes an the client. Submit the operation through the command line exposed by the client node.
+#### <a name="runD"></a> Run the distributed 
 
-##### Run Storage Node
+#### Run a Storage Node
 
 - Dowload the  latest  [release](https://github.com/dido18/PAD-FileSystem/releases) `core-<version>.jar`
 in the remote nodes where you want to execute the storage node.
 
-Run a single node with the command below:  
+- Run the storage node with the command below:  
 
 `java -jar core-<version>.jar -ip <ip> -id <id>  [<ip1>:<id1> [<ipn>:<idn>]]`
 
@@ -75,9 +71,9 @@ example: (run a node with ip `127.0.0.1` with id `node1` and seed nodes `127.0.0
 
 ## Cli project
 
--  Download the latest [release](https://github.com/dido18/PAD-FileSystem/releases) `cli-<version>.jar`
+- Download the latest [release](https://github.com/dido18/PAD-FileSystem/releases) `cli-<version>.jar`
 
-Run a client with `-ip 127.0.0.254` (default) and `- id client` (default) and set one seed node `127.0.0.1:node1`.
+- Run a client with the command below: 
 
 ` java -jar cli-<version>.jar -ip <ip> -id <idClient> ipSeed:id[:gp] [ipSeed:id[:gp]]`
 
@@ -88,7 +84,8 @@ Where :
 
   - `ipSeed:id[:gp]`: identify the seed node that must be conactted initially. (IMPORTANT: the `id`  string must be equal to the remote), `gp` is the gossip port (default `Helper.GOSSIP_PORT`).
 
-Example 
+Example :
+
 `java -jar cli-<version>.jar -ip 127.0.0.254 -id client 127.0.0.1:node1`
 
 ## <a name="structure"></a> Run in Docker environment
