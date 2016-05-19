@@ -1,11 +1,27 @@
 #Pad-fs a distributed  persistent data store 
-Pad-fs is a distribute persistent data store written in `java`. 
+- [Pad-fs architecture](#arch)
+- 
+
+Pad-fs is a distribute persistent data store written in `java`. It has not a GUI, it is toally managed by command line operations.
 
 Pad-fs exposes four main API:
 - `put(k,v)` : insert of a key k and value v into the system.
 - `get(k)` : retrieve the last update version of the data associated with the key k.
 - `list(ip)` : lists all the key values stored into the node with ip address.
 - `rm(k)` : removes the value associated with the key k.
+- 
+## <a name="arch"></a> Pad-Fs architecture overview 
+
+![architecture](https://cloud.githubusercontent.com/assets/9201530/15389916/745e2008-1db9-11e6-9d90-fba983478c69.png)
+
+Pad-fs system is composed by:
+- `Storage system `: a set of communicating storage nodes that are responsible
+to manage the data to be stored. Each storage node has a local database and it is
+composed by two main services
+- `Client` is an external independent node that interact with the storage system
+in order to perform the operation of the file system. 
+
+- `User` : human that perform the operation through a command line.
 
 ### Structure of the project
 The pad-fs project is divided in three sub projects:
