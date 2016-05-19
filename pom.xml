@@ -48,35 +48,6 @@
                         <target>1.8</target>
                     </configuration>
                 </plugin>
-                <!-- Maven Assembly Plugin -->
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-assembly-plugin</artifactId>
-                    <version>2.4.1</version>
-
-                    <configuration>
-                        <descriptorRefs>
-                            <descriptorRef>jar-with-dependencies</descriptorRef>
-                        </descriptorRefs>
-                        <archive>
-                            <manifest>
-                                <mainClass>${project.groupId}.PadFsNode</mainClass>
-                            </manifest>
-                        </archive>
-                    </configuration>
-
-                    <executions>
-                        <execution>
-                            <id>make-assembly</id>
-                            <phase>package</phase>
-                            <goals>
-                                <goal>single</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
-
-
         <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>exec-maven-plugin</artifactId>
@@ -113,69 +84,25 @@
                     </executions>
                 </plugin>
 
-        <!--Maven to docker plugin, https://fabric8io.github.io/docker-maven-plugin/installation.html -->
-               <!--<plugin>
-                    <groupId>io.fabric8</groupId>
-                    <artifactId>docker-maven-plugin</artifactId>
-                    <version>0.15.1</version>
-
-                    <configuration>
-                        <dockerHost>unix:///var/run/docker.sock</dockerHost>
-                        <useColor>true</useColor>
-
-                    <images>
-                     &lt;!&ndash;A single's image configuration &ndash;&gt;
-                        <image>
-                            <name>padfs/${project.name}:${project.version}</name>
-                            <build>
-                                <dockerFileDir>${project.basedir}/src/main/docker</dockerFileDir>
-                                <dockerFile>Dockerfile</dockerFile>
-
-                            </build>
-                        </image>
-                    </images>
-                     </configuration>
-
-        &lt;!&ndash;onnect start/stop to pre- and post-integration-test phase, respectively if you want to start
-           your docker containers during integration tests&ndash;&gt;
-                    <executions>
-                        &lt;!&ndash;execution>
-                           <id>start</id>
-                            <phase>pre-integration-test</phase>
-                            <goals>
-                              &lt;!&ndash; "build" should be used to create the images with the artifact &ndash;&gt;
-                                <goal>build</goal>
-                                <goal>start</goal>
-                            </goals>
-                        </execution>
-                        <execution>
-                            <id>stop</id>
-                            <phase>post-integration-test</phase>
-                            <goals>
-                                <goal>stop</goal>
-                            </goals>
-                        </execution>&ndash;&gt;
-                    </executions>
-                </plugin>-->
-
                 <!--copy al the jar into folder for Docker image-->
                 <plugin>
                     <artifactId>maven-antrun-plugin</artifactId>
                     <version>1.7</version>
                     <executions>
                         <execution>
-                            <phase>install</phase>
+                            <phase>package</phase>
                             <configuration>
-                                <tasks>
+                                <target>
                                     <!--copy al the jar into /tmp folder for Docker -->
                                     <copy todir="${project.basedir}/src/main/docker">
                                         <fileset dir="${project.basedir}/target/">
                                             <include name="**/*jar-with-dependencies.jar"/>
                                         </fileset>
+                                        <!--change the name in cli.jar , core.jar -->
                                         <globmapper from="*" to="${project.name}.jar"/>
                                     </copy>
 
-                                </tasks>
+                                </target>
                             </configuration>
                             <goals>
                                 <goal>run</goal>
