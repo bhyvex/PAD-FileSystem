@@ -46,7 +46,7 @@ There are three ways to run the project
 
 #### <a name="runD"></a> Run the distributed 
 
-#### Run a Storage Node
+#### Storage Node
 
 - Dowload the  latest  [release](https://github.com/dido18/PAD-FileSystem/releases) `core-<version>.jar`
 in the remote nodes where you want to execute the storage node.
@@ -71,7 +71,7 @@ example: (run a node with ip `127.0.0.1` with id `node1` and seed nodes `127.0.0
 `java -jar core-<version>.jar   -ip 127.0.0.1 -id node1  127.0.0.2:node2 127.0.0.3:node3`
 
 
-## Cli project
+#### Client node
 
 - Download the latest [release](https://github.com/dido18/PAD-FileSystem/releases) `cli-<version>.jar`
 
@@ -112,7 +112,7 @@ If you want run a single Storage node container (if you don't execute`runDocker.
 
 `docker run -it --net <docker-network> padfs/core:<version> -ip 127.0.0.1 -id node1 127.0.0.2:node2`
 
-#### Build clinet node iamge
+#### Build client node image
 
 Compile and package the `.jar` into the `/target` folder and into the `src/main/docker` folder.
 
@@ -126,7 +126,8 @@ Run the client container (if you don't execute`reunDocker.sh`):
 
 `docker run -it padfs/cli:<version> -ip 127.0.0.254 -id client 127.0.0.1:node1`
 
-### <a id="app"> </a> Run multithreaded version (for testing)
+## <a id="app"> </a> Run multithreaded version (only for testing)
+
 For testing environment is possible to run a set of four nodes into a local machine.
 
 Is the easy way to run a set of four storage nodes into a single machine (multi-threaded).
