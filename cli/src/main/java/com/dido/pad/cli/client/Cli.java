@@ -101,49 +101,52 @@ public class Cli {
                 "\t nodes           : shows the nodes active inthe system \n";
 
         System.out.print("\nInsert a command (h for usage message)");
+        String input = null;
         while(true){
 
             System.out.print("\n>> ");
-            String input = null;
+
             try {
                 input = bufferReader.readLine();
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            if( input !=null) {
+                String[] cmds = input.split("\\s+"); //splits  white spaces
 
-            String[] cmds = input.split("\\s+"); //splits  white spaces
+                switch (cmds[0]) {
+                    case ("get"):
+                        String key = cmds[1];
+                        sendGetAndWait(key);
+                        break;
+                    case ("put"):
+                        String k = cmds[1];
+                        String v = cmds[2];
+                        sendPutAndWait(k, v);
+                        break;
+                    case ("list"):
+                        String ip = cmds[1];
+                        sendListAndWait(ip);
+                        break;
+                    case ("rm"):
+                        String Rmkey = cmds[1];
+                        sendRmAndWait(Rmkey);
+                        break;
+                    case ("nodes"):
+                        System.out.print(getcHasher().getAllNodes());
+                        break;
+                    case ("force"):
+                        String kk = cmds[1];
+                        String vv = cmds[2];
+                        String Ip = cmds[3];
+                        sendForce(kk, vv, Ip);
+                        ;
+                        break;
+                    case ("h"):
+                        System.out.print(help);
+                        break;
 
-            switch (cmds[0]) {
-                case ("get"):
-                    String key = cmds[1];
-                    sendGetAndWait(key);
-                    break;
-                case ("put"):
-                    String k = cmds[1];
-                    String v = cmds[2];
-                    sendPutAndWait(k,v);
-                    break;
-                case ("list"):
-                    String ip = cmds[1];
-                    sendListAndWait(ip);
-                    break;
-                case ("rm"):
-                    String Rmkey = cmds[1];
-                    sendRmAndWait(Rmkey);
-                    break;
-                case ("nodes"):
-                    System.out.print(getcHasher().getAllNodes());
-                    break;
-                case ("force"):
-                    String kk = cmds[1];
-                    String vv = cmds[2];
-                    String Ip = cmds[3];
-                    sendForce(kk, vv, Ip);;
-                    break;
-                case ("h"):
-                    System.out.print(help);
-                    break;
-
+                }
             }
         }
     }
