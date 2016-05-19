@@ -59,15 +59,17 @@ Run a single node with the command below: where `<ip>` is the ip of the remote m
 
 
 example: (run a node with ip `127.0.0.1` with id `node1` and seed nodes `127.0.0.2` and`127.0.0.3`
+
 `java -cp core-<version>.jar  com.dido.pad.PadFsNode -ip 127.0.0.1 -id node1  127.0.0.2:node2 127.0.0.3:node3`
 
 The parameters are:
 
 `./PadFsNode -ip <ipAddress> -id <String> -gp <int> -sp <int>  [<seedIP>:<id>:<gp>]`
 
-where
+where:
+
 - `-ip` is the ip address (x.y.z.w) of the node.
--
+
 - `-id <String>` is a string representing the id of the node.
 
 - `-gp <int>` setups the port for the gossip protocol (default port is defined in `Helper.GOSSIP_PORT=2000``).
@@ -96,60 +98,52 @@ Where `Options`:
   - `ipSeed:id[:gp]`: identify the seed node that must be conactted initially. (IMPORTANT: the `id`  string must be equal to the remote), `gp` is the gossip port (default `Helper.GOSSIP_PORT`).
   
 
-## <a name="structure"></a> Run in Docker 
+## <a name="structure"></a> Run in Docker environment
 
 The project con be runned in a Docker environment.
 The steps are :
     - create the `padfs/core:<version>` image (see below)
-    - crate the `padfs/cli:<version>` image (see below)
-    - run the perl scripts `runDocker.pl` that create a Docekr  network (`pad-net`) and run the containers.
+    - create the `padfs/cli:<version>` image (see below)
+    - run `runDocker.sh` that create a Docekr network (`pad-net`) and run the Storage nodes and the Client containers.
 
-#### Docker core image
+#### Build storage node image
 
 In order to compile compile and package the `.jar` into the `/target` folder and into the `src/main/docker` folder, type:
 
-`mvn clean install  -DskipTests=true  -pl core -am`
+`mvn package`
 
-Go inside the `core` folder:
+Build the image `padfs/core:<version>` and starting from the DockerFile and adding the jar inside the image.
 
-` cd core`
+`mvn docker:build -pl core`
 
-Build the image `padfs/core:<version>` starting from the DockerFile and adding the jar inside the image.
+If you want run a single Storage node container (if you don't execute`runDocker.sh`)
 
-` mvn docker:build`
+`docker run -it --net <docker-network> padfs/core:<version> -ip 127.0.0.1 -id node1 127.0.0.2:node2`
 
-Run the node container (if you don't execute`reunDocker.pl`)
-`docker run --net <network docker> padfs/core:<version> com.dido.pad.PadFsNode -ip 127.0.0.1 -id node1 127.0.0.2:node2`
-
-#### Docker client image
+#### Build clinet node iamge
 
 Compile and package the `.jar` into the `/target` folder and into the `src/main/docker` folder.
 
-`mvn clean install -DskipTests=true   -pl cli -am`
-
-Go inside the folder:
-
-`cd cli`
+`mvn package`
 
 Build the image `padfs/cli:<version>` starting from the DockerFile and adding the jar inside the image.
 
-`mvn docker:build`
+`mvn docker:build -pl cli`
 
-Run the client container ((if you don't execute`reunDocker.pl`):
+Run the client container (if you don't execute`reunDocker.sh`):
 
-`docker run padfs/cli:<version> com.dido.pad.cli.MainClient -ip 127.0.0.254 -id client 127.0.0.1:node1`
-
+`docker run -it padfs/cli:<version> -ip 127.0.0.254 -id client 127.0.0.1:node1`
 
 ### <a id="app"> </a> Run multithreaded version (for testing)
 For testing environment is possible to run a set of four nodes into a local machine.
 
-Is the easy way to run a set of four storage nodes into a single machine (multi threaded).
+Is the easy way to run a set of four storage nodes into a single machine (multi-threaded).
 
 Download the latest release of `app-<version>.jar` [release](https://github.com/dido18/PAD-FileSystem/releases)
 
 In order to run four nodes: `127.0.0.1, 127.0.0.2 , 127.0.0.3 , 127.0.0.4` on local machine:
 
-`java -cp app-0.1.jar com.dido.pad.app.AppRunner`
+`java -jar app-<version>.jar `
 
 - `h` (into the console) shows the available commands:
 ```
