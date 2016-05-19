@@ -41,6 +41,6 @@ my $scp = Net::SCP->new( "node5.novello.isti.cnr.it", "aspirantidottori" );
 $scp->put("cli/target/cli-1.0-jar-with-dependencies.jar") or die $scp->{errstr};
 print ("Loaded Client into node5 \n");
 
-`rm start.sh && rm start-client.sh && rm eraseData.sh``
+`rm start.sh && rm start-client.sh && rm eraseData.sh`
 
 
