@@ -50,24 +50,14 @@ IN order to run  in a  distributed environment:
 
 ##### Run Storage Node
 
-Dowload the  latest `core-<version>.jar` [release](https://github.com/dido18/PAD-FileSystem/releases)
+- Dowload the  latest  [release](https://github.com/dido18/PAD-FileSystem/releases) `core-<version>.jar`
 in the remote nodes where you want to execute the storage node.
 
-Run a single node with the command below: where `<ip>` is the ip of the remote machine, and  `<id>` is the name of the machine, and set the seed node to `[<ip1>:<id1> [<ipn>:<idn>]]` ( IMPORTANT: `idi` are the id of the seed nodes that this node must contact initially, they must correspond to the name given to the remote machine)
+Run a single node with the command below:  
 
-`java -cp core-<version>.jar  com.dido.pad.PadFsNode -ip <ip> -id <id>  [<ip1>:<id1> [<ipn>:<idn>]]`
-
-
-example: (run a node with ip `127.0.0.1` with id `node1` and seed nodes `127.0.0.2` and`127.0.0.3`
-
-`java -cp core-<version>.jar  com.dido.pad.PadFsNode -ip 127.0.0.1 -id node1  127.0.0.2:node2 127.0.0.3:node3`
-
-The parameters are:
-
-`./PadFsNode -ip <ipAddress> -id <String> -gp <int> -sp <int>  [<seedIP>:<id>:<gp>]`
+`java -jar core-<version>.jar -ip <ip> -id <id>  [<ip1>:<id1> [<ipn>:<idn>]]`
 
 where:
-
 - `-ip` is the ip address (x.y.z.w) of the node.
 
 - `-id <String>` is a string representing the id of the node.
@@ -76,27 +66,30 @@ where:
 
 - `-sp <int>` setups the port for the storage service (default port is defined in `Helper.STORAGE_PORT=3000`).
 
-- `[<seedIP>:<String>[:<gp>]]` is a list of SEED node concatted by the gossip protocol. Each entry has: `ip` of the node, `id` of the node (id must be equal to remote node id),  `gp = gossip port` is the the gossip port, by default is set to `Helper.GOSSIP_PORT``.
+- `[<seedIP>:<String>[:<gp>]]` is a list of SEED node concatted by the gossip protocol. Each entry has: `ip` of the node, `id` (IMPORTANT `id` are the ids of the seed nodes, they must be equal to the id of the remote machine) ,  `gp = gossip port` is the the gossip port (by default is set to `Helper.GOSSIP_PORT`).
+
+example: (run a node with ip `127.0.0.1` with id `node1` and seed nodes `127.0.0.2` and`127.0.0.3`
+
+`java -jar core-<version>.jar   -ip 127.0.0.1 -id node1  127.0.0.2:node2 127.0.0.3:node3`
 
 
 ## Cli project
-Donload the latest version of the client node `cli-<version>.jar`[release](https://github.com/dido18/PAD-FileSystem/releases)
+
+-  Download the latest [release](https://github.com/dido18/PAD-FileSystem/releases) `cli-<version>.jar`
 
 Run a client with `-ip 127.0.0.254` (default) and `- id client` (default) and set one seed node `127.0.0.1:node1`.
 
-` java -cp cli-<version>.jar com.dido.pad.cli.MainClient -ip 127.0.0.254 -id client 127.0.0.1:node1`
+` java -jar cli-<version>.jar -ip <ip> -id <idClient> ipSeed:id[:gp] [ipSeed:id[:gp]]`
 
-The  parameters are :
-
-`./Client -ip <ipClient> -id <idClient> ipSeed:id[:gp] [ipSeed:id[:gp]`
-
-Where `Options`:
-  -  `--help`: show the help message
-  -  `-id`: (String) Id of the client (Default  `-id client`)
+Where :
+  - `--help`: show the help message
+  - `-id`: (String) Id of the client (Default  `-id client`)
   - `-ip`: Ip address of the client (Default: `-ip 127.0.0.254`)
 
   - `ipSeed:id[:gp]`: identify the seed node that must be conactted initially. (IMPORTANT: the `id`  string must be equal to the remote), `gp` is the gossip port (default `Helper.GOSSIP_PORT`).
-  
+
+Example 
+`java -jar cli-<version>.jar -ip 127.0.0.254 -id client 127.0.0.1:node1`
 
 ## <a name="structure"></a> Run in Docker environment
 
