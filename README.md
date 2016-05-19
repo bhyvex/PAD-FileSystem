@@ -4,9 +4,11 @@
   - [Structure of the project](#structure)
   - [How to run](#run)
 
-Pad-fs is a distribute persistent data store written in `java`. It has not a GUI, it is toally managed by command lines.
+Pad-fs is a distribute persistent data store written in `java`. 
 
-# <a name="arch"></a> Pad-Fs architecture 
+It has not a GUI, it is totally managed by command lines.
+
+## <a name="arch"></a> Pad-Fs architecture 
 
 ![architecture](https://cloud.githubusercontent.com/assets/9201530/15389916/745e2008-1db9-11e6-9d90-fba983478c69.png)
 
