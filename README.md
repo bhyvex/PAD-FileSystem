@@ -6,7 +6,7 @@
 
 Pad-fs is a distribute persistent data store written in `java`. It has not a GUI, it is toally managed by command lines.
 
-## <a name="arch"></a> Pad-Fs architecture 
+# <a name="arch"></a> Pad-Fs architecture 
 
 ![architecture](https://cloud.githubusercontent.com/assets/9201530/15389916/745e2008-1db9-11e6-9d90-fba983478c69.png)
 
@@ -27,7 +27,7 @@ Pad-fs exposes four main API:
 - `list(ip)` : lists all the key values stored into the node with ip address.
 - `rm(k)` : removes the value associated with the key k.
 
-### <a name="structure"></a>Structure of the project
+#### <a name="structure"></a> Structure of the project
 The pad-fs project is divided in three sub projects:
 - `core` contains the code of a single storage node.
 - `cli` contains the node client code. The client is an external node that is used to performs the operations (put, get, list) into the distributed system.
@@ -42,9 +42,11 @@ There are three ways to run the project
 - [Docker](#docker) Creates Docker images (core and client) and run the conatiners in Docker network.
 
 
-### (#name="runD") Run distributed version 
-
-
+#### <a name="runD"></a> Run distributed version 
+IN order to run  in a  distributed environment:
+- Download the `core-<version>.jar` in all the remote machines where you want to executes tha storage node.
+- Download the `cli-<version>.jar` i the machine where you want execute the client.
+- Run all the nodes an the client. Submit the operation through the command line exposed by the client node.
 
 ##### Run Storage Node
 
